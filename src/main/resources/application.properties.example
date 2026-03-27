@@ -1,0 +1,31 @@
+# Server
+spring.application.name=backend
+server.port=8081
+
+# Datasource
+spring.datasource.url=jdbc:postgresql://localhost:5432/YOUR_DB
+spring.datasource.username=YOUR_USERNAME
+spring.datasource.password=YOUR_PASSWORD
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.default_schema=public
+spring.jpa.open-in-view=false
+
+# OAuth2 Resource Server (Keycloak)
+spring.security.oauth2.resourceserver.jwt.issuer-uri=YOUR_KEYCLOAK_URL/realms/YOUR_REALM
+spring.security.oauth2.resourceserver.jwt.jwk-set-uri=YOUR_KEYCLOAK_URL/realms/YOUR_REALM/protocol/openid-connect/certs
+
+# Keycloak Admin
+keycloak.server-url=YOUR_KEYCLOAK_URL
+keycloak.admin.realm=YOUR_REALM
+keycloak.admin.client-id=YOUR_CLIENT_ID
+keycloak.admin.client-secret=YOUR_CLIENT_SECRET
+
+# CORS
+cors.allowed-origins=http://localhost:5173
+
+# Files
+app.upload.dir=uploads

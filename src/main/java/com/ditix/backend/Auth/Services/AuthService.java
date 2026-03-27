@@ -17,7 +17,7 @@ public class AuthService {
 
     private final Keycloak keycloak;
 
-    @Value("${keycloak.realm}")
+    @Value("${keycloak.admin.realm}")
     private String realm;
 
     public AuthService(Keycloak keycloak) {
