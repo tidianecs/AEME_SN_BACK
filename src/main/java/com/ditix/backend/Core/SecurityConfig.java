@@ -1,4 +1,4 @@
-package com.ditix.backend.Config;
+package com.ditix.backend.Core;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,12 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/**").permitAll()
+                // Endpoints publics
+                .requestMatchers("/api/v1/auth/register").permitAll()
+                // WebSocket — doit être accessible sans token JWT
+                // (l'auth se fait via le token STOMP dans les headers)
+                .requestMatchers("/ws/**").permitAll()
+                // Tout le reste nécessite un token
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 ->

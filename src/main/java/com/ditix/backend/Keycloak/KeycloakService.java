@@ -1,4 +1,4 @@
-package com.ditix.backend.Config;
+package com.ditix.backend.Keycloak;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
