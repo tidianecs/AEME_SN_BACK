@@ -3,9 +3,10 @@ package com.ditix.backend.Auth.Controllers;
 import com.ditix.backend.Auth.Services.AuthService;
 import com.ditix.backend.Report.DTO.ReportResponseDTO;
 import com.ditix.backend.Report.Services.ReportService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,30 @@ public class AdminController {
     public AdminController(AuthService authService, ReportService reportService) {
         this.authService = authService;
         this.reportService = reportService;
+    }
+
+    // Créer un user et envoyer une invitation
+    @PostMapping("/users")
+    public ResponseEntity<Map<String, String>> inviteUser(
+            @RequestBody Map<String, String> body
+    ) {
+        String email     = body.get("email");
+        String firstName = body.get("firstName");
+        String lastName  = body.get("lastName");
+        String role      = body.getOrDefault("role", "user");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Email requis"));
+        }
+        if (!role.equals("user") && !role.equals("admin")) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Rôle invalide — utilise 'user' ou 'admin'"));
+        }
+
+        authService.inviteUser(email, firstName, lastName, role);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("message", "Invitation envoyée à " + email));
     }
 
     // Voir tous les users
@@ -40,12 +65,13 @@ public class AdminController {
         return ResponseEntity.ok(reportService.getReportsByUserId(userId));
     }
 
-    // Approuver ou supprimer un report
+    // Approuver un report
     @PatchMapping("/reports/{id}/status")
     public ResponseEntity<ReportResponseDTO> approveReport(@PathVariable Long id) {
         return ResponseEntity.ok(reportService.approveReport(id));
     }
 
+    // Supprimer un report
     @DeleteMapping("/reports/{id}")
     public ResponseEntity<Map<String, String>> deleteReportAdmin(@PathVariable Long id) {
         reportService.deleteReportAdmin(id);

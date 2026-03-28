@@ -1,8 +1,6 @@
 package com.ditix.backend.Auth.Controllers;
 
-import com.ditix.backend.Auth.DTO.RegisterRequest;
 import com.ditix.backend.Auth.Services.AuthService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -18,13 +16,6 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
-    }
-
-    @PostMapping("/auth/register")
-    public ResponseEntity<Map<String, String>> register(@RequestBody RegisterRequest request) {
-        authService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Successfully created"));
     }
 
     @GetMapping("/me")
