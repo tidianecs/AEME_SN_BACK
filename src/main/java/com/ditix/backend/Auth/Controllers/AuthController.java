@@ -20,7 +20,6 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // Sign up
     @PostMapping("/auth/register")
     public ResponseEntity<Map<String, String>> register(@RequestBody RegisterRequest request) {
         authService.registerUser(request);
@@ -28,7 +27,6 @@ public class AuthController {
                 .body(Map.of("message", "Successfully created"));
     }
 
-    // Get the user infos
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> me(JwtAuthenticationToken authentication) {
         Jwt jwt = authentication.getToken();
@@ -39,5 +37,10 @@ public class AuthController {
                 "lastName",  jwt.getClaimAsString("family_name"),
                 "fullName",  jwt.getClaimAsString("name")
         ));
+    }
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<Map<String, String>> getUserById(@PathVariable String userId) {
+        return ResponseEntity.ok(authService.getUserById(userId));
     }
 }

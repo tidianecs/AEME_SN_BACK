@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AuthService {
@@ -25,8 +26,6 @@ public class AuthService {
     }
 
     public void registerUser(RegisterRequest request) {
-
-        // Verify if his email exist
         List<UserRepresentation> existing = keycloak.realm(realm)
                 .users()
                 .searchByEmail(request.getEmail(), true);
@@ -35,13 +34,11 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé");
         }
 
-        // Put his password in the keycloak admin dashboard
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue(request.getPassword());
         credential.setTemporary(false);
 
-        // Build the user
         UserRepresentation user = new UserRepresentation();
         user.setUsername(request.getEmail());
         user.setEmail(request.getEmail());
@@ -51,7 +48,6 @@ public class AuthService {
         user.setEmailVerified(true);
         user.setCredentials(List.of(credential));
 
-        // Create him in keycloak
         Response response = keycloak.realm(realm).users().create(user);
 
         if (response.getStatus() != 201) {
@@ -60,5 +56,24 @@ public class AuthService {
                 "Erreur lors de la création du compte"
             );
         }
+    }
+
+    public Map<String, String> getUserById(String userId) {
+        UserRepresentation user = keycloak
+            .realm(realm)
+            .users()
+            .get(userId)
+            .toRepresentation();
+
+        String firstName = user.getFirstName() != null ? user.getFirstName() : "";
+        String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
+
+        return Map.of(
+            "id",        user.getId(),
+            "email",     user.getEmail() != null ? user.getEmail() : "",
+            "firstName", firstName,
+            "lastName",  lastName,
+            "fullName",  (firstName + " " + lastName).trim()
+        );
     }
 }
