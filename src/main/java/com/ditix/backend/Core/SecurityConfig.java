@@ -22,12 +22,9 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // Endpoints publics
                 .requestMatchers("/api/v1/auth/register").permitAll()
-                // WebSocket — doit être accessible sans token JWT
-                // (l'auth se fait via le token STOMP dans les headers)
                 .requestMatchers("/ws/**").permitAll()
-                // Tout le reste nécessite un token
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 ->
