@@ -1,0 +1,54 @@
+package com.ditix.backend.Auth.Controllers;
+
+import com.ditix.backend.Auth.Services.AuthService;
+import com.ditix.backend.Report.DTO.ReportResponseDTO;
+import com.ditix.backend.Report.Services.ReportService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1/admin")
+public class AdminController {
+
+    private final AuthService authService;
+    private final ReportService reportService;
+
+    public AdminController(AuthService authService, ReportService reportService) {
+        this.authService = authService;
+        this.reportService = reportService;
+    }
+
+    // Voir tous les users
+    @GetMapping("/users")
+    public ResponseEntity<List<Map<String, String>>> getAllUsers() {
+        return ResponseEntity.ok(authService.getAllUsers());
+    }
+
+    // Supprimer un user
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
+        authService.deleteUser(userId);
+        return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
+    }
+
+    // Voir tous les reports d'un user
+    @GetMapping("/users/{userId}/reports")
+    public ResponseEntity<List<ReportResponseDTO>> getUserReports(@PathVariable String userId) {
+        return ResponseEntity.ok(reportService.getReportsByUserId(userId));
+    }
+
+    // Approuver ou supprimer un report
+    @PatchMapping("/reports/{id}/status")
+    public ResponseEntity<ReportResponseDTO> approveReport(@PathVariable Long id) {
+        return ResponseEntity.ok(reportService.approveReport(id));
+    }
+
+    @DeleteMapping("/reports/{id}")
+    public ResponseEntity<Map<String, String>> deleteReportAdmin(@PathVariable Long id) {
+        reportService.deleteReportAdmin(id);
+        return ResponseEntity.ok(Map.of("message", "Rapport supprimé"));
+    }
+}

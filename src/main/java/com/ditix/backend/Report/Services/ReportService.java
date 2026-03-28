@@ -134,4 +134,24 @@ public class ReportService {
                 .orElseThrow(() -> new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Rapport introuvable"));
     }
+
+    public List<ReportResponseDTO> getReportsByUserId(String userId) {
+        return reportRepository.findByCreatedByUserId(userId).stream()
+            .map(ReportResponseDTO::new)
+            .collect(Collectors.toList());
+    }
+
+    public void deleteReportAdmin(Long id) {
+        Report report = reportRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Rapport introuvable"));
+        try {
+            if (report.getFilePath() != null) {
+                Files.deleteIfExists(Paths.get(report.getFilePath()));
+            }
+        } catch (IOException e) {
+            // log mais on continue
+        }
+        reportRepository.delete(report);
+    }
 }

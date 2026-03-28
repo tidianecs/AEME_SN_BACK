@@ -76,4 +76,21 @@ public class AuthService {
             "fullName",  (firstName + " " + lastName).trim()
         );
     }
+
+    public List<Map<String, String>> getAllUsers() {
+        return keycloak.realm(realm).users().list().stream()
+            .map(user -> Map.of(
+                "id",        user.getId(),
+                "email",     user.getEmail() != null ? user.getEmail() : "",
+                "firstName", user.getFirstName() != null ? user.getFirstName() : "",
+                "lastName",  user.getLastName() != null ? user.getLastName() : "",
+                "fullName",  ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                            (user.getLastName() != null ? user.getLastName() : "")).trim()
+            ))
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    public void deleteUser(String userId) {
+        keycloak.realm(realm).users().get(userId).remove();
+    }
 }
