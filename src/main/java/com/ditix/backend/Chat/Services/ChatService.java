@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ChatService {
@@ -56,6 +57,21 @@ public class ChatService {
             .stream()
             .map(MessageDTO::new)
             .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteConversation(Long id, String userId) {
+        Conversation conv = conversationRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Conversation introuvable"));
+
+        if (!conv.getUserOneId().equals(userId) && !conv.getUserTwoId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        }
+
+        // Supprime d'abord les messages de la conversation
+        messageRepository.deleteByConversationId(id);
+        conversationRepository.delete(conv);
     }
 
     // Persiste un message en base

@@ -48,4 +48,14 @@ public class ChatRESTController {
         String userId = authentication.getToken().getSubject();
         return ResponseEntity.ok(chatService.getMessages(conversationId, userId));
     }
+
+    @DeleteMapping("/conversations/{id}")
+    public ResponseEntity<Map<String, String>> deleteConversation(
+            @PathVariable Long id,
+            JwtAuthenticationToken authentication
+    ) {
+        String userId = authentication.getToken().getSubject();
+        chatService.deleteConversation(id, userId);
+        return ResponseEntity.ok(Map.of("message", "Conversation supprimée"));
+    }
 }
