@@ -1,5 +1,6 @@
 package com.ditix.backend.Report.Services;
 
+import com.ditix.backend.Report.Model.ReportStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,18 +39,15 @@ public class ReportService {
             String userId
     ) throws IOException {
 
-        // Crée le dossier uploads s'il n'existe pas
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Sauvegarde le fichier avec un nom unique
         String uniqueFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         Path filePath = uploadPath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), filePath);
 
-        // Crée et sauvegarde le report
         Report report = new Report();
         report.setReportType(reportType);
         report.setReportDate(reportDate);
@@ -60,6 +58,7 @@ public class ReportService {
         report.setContentType(file.getContentType());
         report.setFileSize(file.getSize());
         report.setCreatedByUserId(userId);
+        report.setReportStatus(ReportStatus.SUBMITTED);
 
         return new ReportResponseDTO(reportRepository.save(report));
     }
@@ -78,7 +77,8 @@ public class ReportService {
 
     public ReportResponseDTO getReportById(Long id, String userId) {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
 
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
@@ -89,13 +89,13 @@ public class ReportService {
 
     public void deleteReport(Long id, String userId) throws IOException {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
 
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
 
-        // Supprime le fichier du disque
         if (report.getFilePath() != null) {
             Files.deleteIfExists(Paths.get(report.getFilePath()));
         }
@@ -105,7 +105,8 @@ public class ReportService {
 
     public Path getFilePath(Long id, String userId) {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
 
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
@@ -114,8 +115,23 @@ public class ReportService {
         return Paths.get(report.getFilePath());
     }
 
+    public ReportResponseDTO approveReport(Long id) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+
+        if (report.getReportStatus() != ReportStatus.SUBMITTED) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être approuvé");
+        }
+
+        report.setReportStatus(ReportStatus.APPROVED);
+        return new ReportResponseDTO(reportRepository.save(report));
+    }
+
     public Report getRawReport(Long id) {
         return reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
     }
 }
