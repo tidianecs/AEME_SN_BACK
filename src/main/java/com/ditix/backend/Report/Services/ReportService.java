@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.ditix.backend.Report.DTO.ReportResponseDTO;
 import com.ditix.backend.Report.Model.Report;
 import com.ditix.backend.Report.Repository.ReportRepository;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +39,6 @@ public class ReportService {
             MultipartFile file,
             String userId
     ) throws IOException {
-
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
@@ -79,11 +79,9 @@ public class ReportService {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Rapport introuvable"));
-
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
-
         return new ReportResponseDTO(report);
     }
 
@@ -91,15 +89,12 @@ public class ReportService {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Rapport introuvable"));
-
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
-
         if (report.getFilePath() != null) {
             Files.deleteIfExists(Paths.get(report.getFilePath()));
         }
-
         reportRepository.delete(report);
     }
 
@@ -107,11 +102,9 @@ public class ReportService {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Rapport introuvable"));
-
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
-
         return Paths.get(report.getFilePath());
     }
 
@@ -119,14 +112,32 @@ public class ReportService {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Rapport introuvable"));
-
         if (report.getReportStatus() != ReportStatus.SUBMITTED) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être approuvé");
         }
-
         report.setReportStatus(ReportStatus.APPROVED);
         return new ReportResponseDTO(reportRepository.save(report));
+    }
+
+    public ReportResponseDTO rejectReport(Long id) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+        if (report.getReportStatus() != ReportStatus.SUBMITTED) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être rejeté");
+        }
+        report.setReportStatus(ReportStatus.REJECTED);
+        return new ReportResponseDTO(reportRepository.save(report));
+    }
+
+    public int calculateScore(String userId) {
+        long approved = reportRepository.countByCreatedByUserIdAndReportStatus(
+            userId, ReportStatus.APPROVED);
+        long rejected = reportRepository.countByCreatedByUserIdAndReportStatus(
+            userId, ReportStatus.REJECTED);
+        return (int) (approved * 4 - rejected * 5);
     }
 
     public Report getRawReport(Long id) {

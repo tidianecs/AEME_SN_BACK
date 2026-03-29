@@ -22,7 +22,6 @@ public class AdminController {
         this.reportService = reportService;
     }
 
-    // Créer un user et envoyer une invitation
     @PostMapping("/users")
     public ResponseEntity<Map<String, String>> inviteUser(
             @RequestBody Map<String, String> body
@@ -46,32 +45,54 @@ public class AdminController {
                 .body(Map.of("message", "Invitation envoyée à " + email));
     }
 
-    // Voir tous les users
     @GetMapping("/users")
     public ResponseEntity<List<Map<String, String>>> getAllUsers() {
         return ResponseEntity.ok(authService.getAllUsers());
     }
 
-    // Supprimer un user
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
         authService.deleteUser(userId);
         return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
     }
 
-    // Voir tous les reports d'un user
+    // Assigner le membership service d'un user
+    @PatchMapping("/users/{userId}/membership")
+    public ResponseEntity<Map<String, String>> updateMembership(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> body
+    ) {
+        String membershipService = body.get("membershipService");
+        if (membershipService == null || membershipService.isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "membershipService requis"));
+        }
+        authService.updateMembershipService(userId, membershipService);
+        return ResponseEntity.ok(Map.of("message", "Membership mis à jour"));
+    }
+
     @GetMapping("/users/{userId}/reports")
     public ResponseEntity<List<ReportResponseDTO>> getUserReports(@PathVariable String userId) {
         return ResponseEntity.ok(reportService.getReportsByUserId(userId));
     }
 
-    // Approuver un report
+    // Approuver ou rejeter un report
     @PatchMapping("/reports/{id}/status")
-    public ResponseEntity<ReportResponseDTO> approveReport(@PathVariable Long id) {
-        return ResponseEntity.ok(reportService.approveReport(id));
+    public ResponseEntity<ReportResponseDTO> updateReportStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body
+    ) {
+        String status = body.get("status");
+        if ("APPROVED".equals(status)) {
+            return ResponseEntity.ok(reportService.approveReport(id));
+        } else if ("REJECTED".equals(status)) {
+            return ResponseEntity.ok(reportService.rejectReport(id));
+        } else {
+            throw new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Status invalide — utilise 'APPROVED' ou 'REJECTED'");
+        }
     }
 
-    // Supprimer un report
     @DeleteMapping("/reports/{id}")
     public ResponseEntity<Map<String, String>> deleteReportAdmin(@PathVariable Long id) {
         reportService.deleteReportAdmin(id);
