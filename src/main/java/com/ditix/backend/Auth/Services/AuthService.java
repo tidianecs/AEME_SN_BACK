@@ -1,6 +1,5 @@
 package com.ditix.backend.Auth.Services;
 
-import com.ditix.backend.Auth.DTO.RegisterRequest;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -27,7 +26,6 @@ public class AuthService {
     }
 
     public void inviteUser(String email, String firstName, String lastName, String role) {
-        // Vérifie si email déjà utilisé
         List<UserRepresentation> existing = keycloak.realm(realm)
                 .users()
                 .searchByEmail(email, true);
@@ -35,7 +33,6 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé");
         }
 
-        // Crée le user sans mot de passe
         UserRepresentation user = new UserRepresentation();
         user.setUsername(email);
         user.setEmail(email);
@@ -43,8 +40,8 @@ public class AuthService {
         user.setLastName(lastName);
         user.setEnabled(true);
         user.setEmailVerified(false);
-        // Action requise : définir le mot de passe + vérifier l'email
-        user.setRequiredActions(List.of("UPDATE_PASSWORD", "VERIFY_EMAIL"));
+        // À la première connexion : vérifier email + choisir mdp + mettre à jour profil
+        user.setRequiredActions(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD", "UPDATE_PROFILE"));
 
         Response response = keycloak.realm(realm).users().create(user);
 
@@ -55,11 +52,9 @@ public class AuthService {
             );
         }
 
-        // Récupère l'ID du user créé
         String userId = response.getLocation().getPath()
                 .replaceAll(".*/([^/]+)$", "$1");
 
-        // Assigne le rôle (user ou admin)
         RoleRepresentation roleRep = keycloak.realm(realm)
                 .roles()
                 .get(role)
@@ -67,9 +62,12 @@ public class AuthService {
         keycloak.realm(realm).users().get(userId)
                 .roles().realmLevel().add(List.of(roleRep));
 
-        // Envoie l'email d'invitation
-        keycloak.realm(realm).users().get(userId)
-                .sendVerifyEmail();
+        // Envoie l'email d'invitation — on catch l'erreur pour ne pas crasher
+        try {
+            keycloak.realm(realm).users().get(userId).sendVerifyEmail();
+        } catch (Exception e) {
+            System.out.println("Email d'invitation non envoyé : " + e.getMessage());
+        }
     }
 
     public Map<String, String> getUserById(String userId) {
@@ -94,7 +92,6 @@ public class AuthService {
     public List<Map<String, String>> getAllUsers() {
         return keycloak.realm(realm).users().list().stream()
             .map(user -> {
-                // Récupère les rôles du user
                 List<String> roles = keycloak.realm(realm).users()
                         .get(user.getId())
                         .roles().realmLevel().listEffective()
@@ -103,7 +100,7 @@ public class AuthService {
                         .filter(r -> r.equals("user") || r.equals("admin"))
                         .collect(Collectors.toList());
 
-                String role = roles.contains("admin") ? "admin" : 
+                String role = roles.contains("admin") ? "admin" :
                               roles.contains("user") ? "user" : "none";
 
                 return Map.of(
