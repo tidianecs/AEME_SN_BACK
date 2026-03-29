@@ -110,7 +110,8 @@ public class AuthService {
                     "lastName",  user.getLastName() != null ? user.getLastName() : "",
                     "fullName",  ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
                                 (user.getLastName() != null ? user.getLastName() : "")).trim(),
-                    "role",      role
+                    "role",      role,
+                    "emailVerified", String.valueOf(user.isEmailVerified())
                 );
             })
             .collect(Collectors.toList());
