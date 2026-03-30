@@ -27,7 +27,7 @@ public class AuthService {
         this.keycloak = keycloak;
     }
 
-    public void inviteUser(String email, String firstName, String lastName, String role) {
+    public void inviteUser(String email, String firstName, String lastName, String role, String membershipService) {
         List<UserRepresentation> existing = keycloak.realm(realm)
                 .users()
                 .searchByEmail(email, true);
@@ -62,6 +62,11 @@ public class AuthService {
                 .toRepresentation();
         keycloak.realm(realm).users().get(userId)
                 .roles().realmLevel().add(List.of(roleRep));
+
+        // Assigne le membershipService si renseigné
+        if (membershipService != null && !membershipService.isBlank()) {
+            updateMembershipService(userId, membershipService);
+        }
 
         try {
             keycloak.realm(realm).users().get(userId).sendVerifyEmail();
@@ -110,7 +115,6 @@ public class AuthService {
             if (vals != null && !vals.isEmpty()) membershipService = vals.get(0);
         }
 
-        // Récupère le rôle
         List<String> roles = keycloak.realm(realm).users()
                 .get(userId)
                 .roles().realmLevel().listEffective()

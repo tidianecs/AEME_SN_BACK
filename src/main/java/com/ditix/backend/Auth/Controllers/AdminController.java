@@ -26,10 +26,11 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> inviteUser(
             @RequestBody Map<String, String> body
     ) {
-        String email     = body.get("email");
-        String firstName = body.get("firstName");
-        String lastName  = body.get("lastName");
-        String role      = body.getOrDefault("role", "user");
+        String email             = body.get("email");
+        String firstName         = body.get("firstName");
+        String lastName          = body.get("lastName");
+        String role              = body.getOrDefault("role", "user");
+        String membershipService = body.getOrDefault("membershipService", "");
 
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest()
@@ -40,7 +41,7 @@ public class AdminController {
                 .body(Map.of("error", "Rôle invalide — utilise 'user' ou 'admin'"));
         }
 
-        authService.inviteUser(email, firstName, lastName, role);
+        authService.inviteUser(email, firstName, lastName, role, membershipService);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Invitation envoyée à " + email));
     }
@@ -50,13 +51,6 @@ public class AdminController {
         return ResponseEntity.ok(authService.getAllUsers());
     }
 
-    // @DeleteMapping("/users/{userId}")
-    // public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
-    //     authService.deleteUser(userId);
-    //     return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
-    // }
-
-    // Assigner le membership service d'un user
     @PatchMapping("/users/{userId}/membership")
     public ResponseEntity<Map<String, String>> updateMembership(
             @PathVariable String userId,
@@ -76,7 +70,6 @@ public class AdminController {
         return ResponseEntity.ok(reportService.getReportsByUserId(userId));
     }
 
-    // Approuver ou rejeter un report
     @PatchMapping("/reports/{id}/status")
     public ResponseEntity<ReportResponseDTO> updateReportStatus(
             @PathVariable Long id,
