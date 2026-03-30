@@ -86,9 +86,15 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/reports/{id}")
-    public ResponseEntity<Map<String, String>> deleteReportAdmin(@PathVariable Long id) {
-        reportService.deleteReportAdmin(id);
-        return ResponseEntity.ok(Map.of("message", "Rapport supprimé"));
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
+        authService.deleteUser(userId);
+        return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
     }
+
+    // @DeleteMapping("/reports/{id}")
+    // public ResponseEntity<Map<String, String>> deleteReportAdmin(@PathVariable Long id) {
+    //     reportService.deleteReportAdmin(id);
+    //     return ResponseEntity.ok(Map.of("message", "Rapport supprimé"));
+    // }
 }
