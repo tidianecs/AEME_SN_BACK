@@ -50,11 +50,11 @@ public class AdminController {
         return ResponseEntity.ok(authService.getAllUsers());
     }
 
-    @DeleteMapping("/users/{userId}")
-    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
-        authService.deleteUser(userId);
-        return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
-    }
+    // @DeleteMapping("/users/{userId}")
+    // public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
+    //     authService.deleteUser(userId);
+    //     return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
+    // }
 
     // Assigner le membership service d'un user
     @PatchMapping("/users/{userId}/membership")
