@@ -68,7 +68,7 @@ public class ReportService {
             String userId
     ) throws IOException {
 
-        String illustrationsPath = saveFile(illustrations);
+        String illustrationsPath  = saveFile(illustrations);
         String autresDocumentsPath = saveFile(autresDocuments);
 
         Report report = Report.builder()
@@ -109,16 +109,21 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    public ReportResponseDTO getReportById(Long id, String userId) {
+    public List<ReportResponseDTO> getAllReports() {
+        return reportRepository.findAll().stream()
+                .map(ReportResponseDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    // Accessible à tous — plus de vérification ownership
+    public ReportResponseDTO getReportById(Long id) {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Rapport introuvable"));
-        if (!report.getCreatedByUserId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
-        }
         return new ReportResponseDTO(report);
     }
 
+    // Suppression — garde la vérification ownership
     public void deleteReport(Long id, String userId) throws IOException {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -191,11 +196,5 @@ public class ReportService {
         } catch (IOException e) {
             System.out.println("Erreur suppression fichier : " + e.getMessage());
         }
-    }
-
-    public List<ReportResponseDTO> getAllReports() {
-        return reportRepository.findAll().stream()
-            .map(ReportResponseDTO::new)
-            .collect(Collectors.toList());
     }
 }
