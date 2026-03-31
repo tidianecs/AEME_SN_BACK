@@ -192,4 +192,10 @@ public class ReportService {
             System.out.println("Erreur suppression fichier : " + e.getMessage());
         }
     }
+
+    public List<ReportResponseDTO> getAllReports() {
+        return reportRepository.findAll().stream()
+            .map(ReportResponseDTO::new)
+            .collect(Collectors.toList());
+    }
 }

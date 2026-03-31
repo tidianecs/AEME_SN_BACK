@@ -143,4 +143,9 @@ public class ReportController {
                         "attachment; filename=\"" + fileName + "\"")
                 .body(resource);
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ReportResponseDTO>> getAllReports() {
+        return ResponseEntity.ok(reportService.getAllReports());
+    }
 }
