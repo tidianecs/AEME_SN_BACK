@@ -23,11 +23,9 @@ public class Report {
     private LocalDateTime updatedAt;
 
     // ─── Section 1 : Date ───────────────────────────────────────────
-    @Column(nullable = false)
     private LocalDateTime reportDate;
 
     // ─── Section 2 : Identification ─────────────────────────────────
-    @Column(nullable = false)
     private String nomGestionnaire;
 
     @Column
