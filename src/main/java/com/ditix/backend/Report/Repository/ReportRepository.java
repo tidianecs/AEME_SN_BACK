@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findByCreatedByUserId(String userId);
-    List<Report> findByCreatedByUserIdAndReportType(String userId, String reportType);
     long countByCreatedByUserIdAndReportStatus(String userId, ReportStatus status);
 }
