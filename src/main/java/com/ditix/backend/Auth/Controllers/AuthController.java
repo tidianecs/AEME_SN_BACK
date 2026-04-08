@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -39,6 +41,30 @@ public class AuthController {
         String userId = authentication.getToken().getSubject();
         int score = reportService.calculateScore(userId);
         return ResponseEntity.ok(authService.getUserProfile(userId, score));
+    }
+
+    // N'importe quel user peut sauvegarder la position de son service
+    @PatchMapping("/me/location")
+    public ResponseEntity<Map<String, String>> updateMyLocation(
+            JwtAuthenticationToken authentication,
+            @RequestBody Map<String, String> body
+    ) {
+        String userId    = authentication.getToken().getSubject();
+        String latitude  = body.get("latitude");
+        String longitude = body.get("longitude");
+
+        if (latitude == null || longitude == null) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "latitude et longitude requis"));
+        }
+        authService.updateServiceLocation(userId, latitude, longitude);
+        return ResponseEntity.ok(Map.of("message", "Position mise à jour"));
+    }
+
+    // Tous les users avec leur position pour la map
+    @GetMapping("/users/locations")
+    public ResponseEntity<List<Map<String, Object>>> getAllUsersWithLocation() {
+        return ResponseEntity.ok(authService.getAllUsersWithLocation());
     }
 
     @GetMapping("/auth/users/{userId}")

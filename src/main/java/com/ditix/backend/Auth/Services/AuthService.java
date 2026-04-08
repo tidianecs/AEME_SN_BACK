@@ -63,7 +63,6 @@ public class AuthService {
         keycloak.realm(realm).users().get(userId)
                 .roles().realmLevel().add(List.of(roleRep));
 
-        // Assigne le membershipService si renseigné
         if (membershipService != null && !membershipService.isBlank()) {
             updateMembershipService(userId, membershipService);
         }
@@ -84,11 +83,7 @@ public class AuthService {
 
         String firstName = user.getFirstName() != null ? user.getFirstName() : "";
         String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
-        String membershipService = "";
-        if (user.getAttributes() != null && user.getAttributes().containsKey("membershipService")) {
-            List<String> vals = user.getAttributes().get("membershipService");
-            if (vals != null && !vals.isEmpty()) membershipService = vals.get(0);
-        }
+        String membershipService = getAttr(user, "membershipService");
 
         return Map.of(
             "id",                user.getId(),
@@ -107,13 +102,11 @@ public class AuthService {
             .get(userId)
             .toRepresentation();
 
-        String firstName = user.getFirstName() != null ? user.getFirstName() : "";
-        String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
-        String membershipService = "";
-        if (user.getAttributes() != null && user.getAttributes().containsKey("membershipService")) {
-            List<String> vals = user.getAttributes().get("membershipService");
-            if (vals != null && !vals.isEmpty()) membershipService = vals.get(0);
-        }
+        String firstName         = user.getFirstName() != null ? user.getFirstName() : "";
+        String lastName          = user.getLastName()  != null ? user.getLastName()  : "";
+        String membershipService = getAttr(user, "membershipService");
+        String serviceLatitude   = getAttr(user, "serviceLatitude");
+        String serviceLongitude  = getAttr(user, "serviceLongitude");
 
         List<String> roles = keycloak.realm(realm).users()
                 .get(userId)
@@ -135,6 +128,8 @@ public class AuthService {
         profile.put("membershipService", membershipService);
         profile.put("role",              role);
         profile.put("score",             score);
+        profile.put("serviceLatitude",   serviceLatitude);
+        profile.put("serviceLongitude",  serviceLongitude);
         return profile;
     }
 
@@ -146,13 +141,59 @@ public class AuthService {
             .toRepresentation();
 
         Map<String, List<String>> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<>();
-        }
+        if (attributes == null) attributes = new HashMap<>();
         attributes.put("membershipService", Collections.singletonList(membershipService));
         user.setAttributes(attributes);
-
         keycloak.realm(realm).users().get(userId).update(user);
+    }
+
+    public void updateServiceLocation(String userId, String latitude, String longitude) {
+        UserRepresentation user = keycloak
+            .realm(realm)
+            .users()
+            .get(userId)
+            .toRepresentation();
+
+        Map<String, List<String>> attributes = user.getAttributes();
+        if (attributes == null) attributes = new HashMap<>();
+        attributes.put("serviceLatitude",  Collections.singletonList(latitude));
+        attributes.put("serviceLongitude", Collections.singletonList(longitude));
+        user.setAttributes(attributes);
+        keycloak.realm(realm).users().get(userId).update(user);
+    }
+
+    public List<Map<String, Object>> getAllUsersWithLocation() {
+        return keycloak.realm(realm).users().list().stream()
+            .filter(user -> user.isEmailVerified())
+            .map(user -> {
+                List<String> roles = keycloak.realm(realm).users()
+                        .get(user.getId())
+                        .roles().realmLevel().listEffective()
+                        .stream()
+                        .map(RoleRepresentation::getName)
+                        .filter(r -> r.equals("user") || r.equals("admin"))
+                        .collect(Collectors.toList());
+
+                String role = roles.contains("admin") ? "admin" :
+                              roles.contains("user") ? "user" : "none";
+
+                String membershipService = getAttr(user, "membershipService");
+                String serviceLatitude   = getAttr(user, "serviceLatitude");
+                String serviceLongitude  = getAttr(user, "serviceLongitude");
+
+                Map<String, Object> u = new HashMap<>();
+                u.put("id",                user.getId());
+                u.put("fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                                           (user.getLastName()  != null ? user.getLastName()  : "")).trim());
+                u.put("email",             user.getEmail() != null ? user.getEmail() : "");
+                u.put("role",              role);
+                u.put("membershipService", membershipService);
+                u.put("serviceLatitude",   serviceLatitude);
+                u.put("serviceLongitude",  serviceLongitude);
+                return u;
+            })
+            .filter(u -> !((String) u.get("membershipService")).isBlank())
+            .collect(Collectors.toList());
     }
 
     public List<Map<String, String>> getAllUsers() {
@@ -169,20 +210,15 @@ public class AuthService {
                 String role = roles.contains("admin") ? "admin" :
                               roles.contains("user") ? "user" : "none";
 
-                String membershipService = "";
-                if (user.getAttributes() != null &&
-                    user.getAttributes().containsKey("membershipService")) {
-                    List<String> vals = user.getAttributes().get("membershipService");
-                    if (vals != null && !vals.isEmpty()) membershipService = vals.get(0);
-                }
+                String membershipService = getAttr(user, "membershipService");
 
                 return Map.of(
                     "id",                user.getId(),
                     "email",             user.getEmail() != null ? user.getEmail() : "",
                     "firstName",         user.getFirstName() != null ? user.getFirstName() : "",
-                    "lastName",          user.getLastName() != null ? user.getLastName() : "",
+                    "lastName",          user.getLastName()  != null ? user.getLastName()  : "",
                     "fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
-                                        (user.getLastName() != null ? user.getLastName() : "")).trim(),
+                                        (user.getLastName()  != null ? user.getLastName()  : "")).trim(),
                     "role",              role,
                     "emailVerified",     String.valueOf(user.isEmailVerified()),
                     "membershipService", membershipService
@@ -193,5 +229,12 @@ public class AuthService {
 
     public void deleteUser(String userId) {
         keycloak.realm(realm).users().get(userId).remove();
+    }
+
+    // Helper pour lire un attribut Keycloak
+    private String getAttr(UserRepresentation user, String key) {
+        if (user.getAttributes() == null) return "";
+        List<String> vals = user.getAttributes().get(key);
+        return (vals != null && !vals.isEmpty()) ? vals.get(0) : "";
     }
 }
