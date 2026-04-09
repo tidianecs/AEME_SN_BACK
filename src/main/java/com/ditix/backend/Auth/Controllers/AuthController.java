@@ -71,4 +71,33 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> getUserById(@PathVariable String userId) {
         return ResponseEntity.ok(authService.getUserById(userId));
     }
+
+    @GetMapping("/geocode/search")
+    public ResponseEntity<String> geocodeSearch(
+            @RequestParam String q,
+            JwtAuthenticationToken authentication
+    ) {
+        try {
+            String url = "https://nominatim.openstreetmap.org/search?q="
+                    + java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8)
+                    + "&format=json&limit=5&countrycodes=sn&accept-language=fr";
+
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(url))
+                    .header("User-Agent", "AEME-Platform/1.0")
+                    .GET()
+                    .build();
+
+            java.net.http.HttpResponse<String> response = client.send(
+                    request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString()
+            );
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/json")
+                    .body(response.body());
+        } catch (Exception e) {
+            return ResponseEntity.ok().body("[]");
+        }
+    }
 }
