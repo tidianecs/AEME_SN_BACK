@@ -85,18 +85,24 @@ public class AuthService {
         String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
 
         Map<String, Object> result = new HashMap<>();
-        result.put("id",                user.getId());
-        result.put("email",             user.getEmail() != null ? user.getEmail() : "");
-        result.put("firstName",         firstName);
-        result.put("lastName",          lastName);
-        result.put("fullName",          (firstName + " " + lastName).trim());
-        result.put("membershipService", getAttr(user, "membershipService"));
-        result.put("genre",             getAttr(user, "genre"));
-        result.put("dateNaissance",     getAttr(user, "dateNaissance"));
-        result.put("telephone",         getAttr(user, "telephone"));
-        result.put("departement",       getAttr(user, "departement"));
-        result.put("posteOccupe",       getAttr(user, "posteOccupe"));
-        result.put("dateNomination",    getAttr(user, "dateNomination"));
+        result.put("id",                  user.getId());
+        result.put("email",               user.getEmail() != null ? user.getEmail() : "");
+        result.put("firstName",           firstName);
+        result.put("lastName",            lastName);
+        result.put("fullName",            (firstName + " " + lastName).trim());
+        result.put("membershipService",   getAttr(user, "membershipService"));
+        result.put("genre",               getAttr(user, "genre"));
+        result.put("dateNaissance",       getAttr(user, "dateNaissance"));
+        result.put("telephone",           getAttr(user, "telephone"));
+        result.put("departement",         getAttr(user, "departement"));
+        result.put("posteOccupe",         getAttr(user, "posteOccupe"));
+        result.put("dateNomination",      getAttr(user, "dateNomination"));
+        result.put("cohorte",             getAttr(user, "cohorte"));
+        result.put("dateInstallation",    getAttr(user, "dateInstallation"));
+        result.put("dateFormation",       getAttr(user, "dateFormation"));
+        result.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
+        result.put("nombreSitesGeres",    getAttr(user, "nombreSitesGeres"));
+        result.put("typeBatiment",        getAttr(user, "typeBatiment"));
         return result;
     }
 
@@ -109,15 +115,6 @@ public class AuthService {
 
         String firstName         = user.getFirstName() != null ? user.getFirstName() : "";
         String lastName          = user.getLastName()  != null ? user.getLastName()  : "";
-        String membershipService = getAttr(user, "membershipService");
-        String serviceLatitude   = getAttr(user, "serviceLatitude");
-        String serviceLongitude  = getAttr(user, "serviceLongitude");
-        String genre             = getAttr(user, "genre");
-        String dateNaissance     = getAttr(user, "dateNaissance");
-        String telephone         = getAttr(user, "telephone");
-        String departement       = getAttr(user, "departement");
-        String posteOccupe       = getAttr(user, "posteOccupe");
-        String dateNomination    = getAttr(user, "dateNomination");
 
         List<String> roles = keycloak.realm(realm).users()
                 .get(userId)
@@ -130,23 +127,32 @@ public class AuthService {
                       roles.contains("user") ? "user" : "none";
 
         Map<String, Object> profile = new HashMap<>();
-        profile.put("id",                user.getId());
-        profile.put("username",          user.getUsername() != null ? user.getUsername() : "");
-        profile.put("email",             user.getEmail() != null ? user.getEmail() : "");
-        profile.put("firstName",         firstName);
-        profile.put("lastName",          lastName);
-        profile.put("fullName",          (firstName + " " + lastName).trim());
-        profile.put("membershipService", membershipService);
-        profile.put("role",              role);
-        profile.put("score",             score);
-        profile.put("serviceLatitude",   serviceLatitude);
-        profile.put("serviceLongitude",  serviceLongitude);
-        profile.put("genre",             genre);
-        profile.put("dateNaissance",     dateNaissance);
-        profile.put("telephone",         telephone);
-        profile.put("departement",       departement);
-        profile.put("posteOccupe",       posteOccupe);
-        profile.put("dateNomination",    dateNomination);
+        profile.put("id",                  user.getId());
+        profile.put("username",            user.getUsername() != null ? user.getUsername() : "");
+        profile.put("email",               user.getEmail() != null ? user.getEmail() : "");
+        profile.put("firstName",           firstName);
+        profile.put("lastName",            lastName);
+        profile.put("fullName",            (firstName + " " + lastName).trim());
+        profile.put("membershipService",   getAttr(user, "membershipService"));
+        profile.put("role",                role);
+        profile.put("score",               score);
+        profile.put("serviceLatitude",     getAttr(user, "serviceLatitude"));
+        profile.put("serviceLongitude",    getAttr(user, "serviceLongitude"));
+        // Section 2 — Profil professionnel
+        profile.put("genre",               getAttr(user, "genre"));
+        profile.put("dateNaissance",       getAttr(user, "dateNaissance"));
+        profile.put("telephone",           getAttr(user, "telephone"));
+        profile.put("departement",         getAttr(user, "departement"));
+        profile.put("posteOccupe",         getAttr(user, "posteOccupe"));
+        profile.put("dateNomination",      getAttr(user, "dateNomination"));
+        // Section 3 — Parcours de formation
+        profile.put("cohorte",             getAttr(user, "cohorte"));
+        profile.put("dateInstallation",    getAttr(user, "dateInstallation"));
+        profile.put("dateFormation",       getAttr(user, "dateFormation"));
+        profile.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
+        // Section 4 — Périmètre de gestion
+        profile.put("nombreSitesGeres",    getAttr(user, "nombreSitesGeres"));
+        profile.put("typeBatiment",        getAttr(user, "typeBatiment"));
         return profile;
     }
 
@@ -160,7 +166,13 @@ public class AuthService {
         Map<String, List<String>> attributes = user.getAttributes();
         if (attributes == null) attributes = new HashMap<>();
 
-        String[] attrKeys = { "genre", "dateNaissance", "telephone", "departement", "posteOccupe", "dateNomination" };
+        String[] attrKeys = {
+            "genre", "dateNaissance", "telephone", "departement",
+            "posteOccupe", "dateNomination",
+            "cohorte", "dateInstallation", "dateFormation", "derniereMiseANiveau",
+            "nombreSitesGeres", "typeBatiment"
+        };
+
         for (String key : attrKeys) {
             if (fields.containsKey(key) && fields.get(key) != null) {
                 attributes.put(key, Collections.singletonList(fields.get(key)));
@@ -222,19 +234,15 @@ public class AuthService {
                 String role = roles.contains("admin") ? "admin" :
                               roles.contains("user") ? "user" : "none";
 
-                String membershipService = getAttr(user, "membershipService");
-                String serviceLatitude   = getAttr(user, "serviceLatitude");
-                String serviceLongitude  = getAttr(user, "serviceLongitude");
-
                 Map<String, Object> u = new HashMap<>();
                 u.put("id",                user.getId());
                 u.put("fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
                                            (user.getLastName()  != null ? user.getLastName()  : "")).trim());
                 u.put("email",             user.getEmail() != null ? user.getEmail() : "");
                 u.put("role",              role);
-                u.put("membershipService", membershipService);
-                u.put("serviceLatitude",   serviceLatitude);
-                u.put("serviceLongitude",  serviceLongitude);
+                u.put("membershipService", getAttr(user, "membershipService"));
+                u.put("serviceLatitude",   getAttr(user, "serviceLatitude"));
+                u.put("serviceLongitude",  getAttr(user, "serviceLongitude"));
                 return u;
             })
             .filter(u -> !((String) u.get("membershipService")).isBlank())
@@ -255,8 +263,6 @@ public class AuthService {
                 String role = roles.contains("admin") ? "admin" :
                               roles.contains("user") ? "user" : "none";
 
-                String membershipService = getAttr(user, "membershipService");
-
                 return Map.of(
                     "id",                user.getId(),
                     "email",             user.getEmail() != null ? user.getEmail() : "",
@@ -266,7 +272,7 @@ public class AuthService {
                                         (user.getLastName()  != null ? user.getLastName()  : "")).trim(),
                     "role",              role,
                     "emailVerified",     String.valueOf(user.isEmailVerified()),
-                    "membershipService", membershipService
+                    "membershipService", getAttr(user, "membershipService")
                 );
             })
             .collect(Collectors.toList());
