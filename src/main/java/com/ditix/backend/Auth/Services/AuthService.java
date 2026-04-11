@@ -93,11 +93,14 @@ public class AuthService {
         result.put("membershipService",   getAttr(user, "membershipService"));
         result.put("genre",               getAttr(user, "genre"));
         result.put("dateNaissance",       getAttr(user, "dateNaissance"));
-        result.put("telephone",           getAttr(user, "telephone"));
+        result.put("contact1",            getAttr(user, "contact1"));
+        result.put("contact2",            getAttr(user, "contact2"));
+        result.put("emailSecondaire",     getAttr(user, "emailSecondaire"));
         result.put("departement",         getAttr(user, "departement"));
         result.put("posteOccupe",         getAttr(user, "posteOccupe"));
         result.put("dateNomination",      getAttr(user, "dateNomination"));
-        result.put("cohorte",             getAttr(user, "cohorte"));
+        result.put("cohorte1",            getAttr(user, "cohorte1"));
+        result.put("cohorte2",            getAttr(user, "cohorte2"));
         result.put("dateInstallation",    getAttr(user, "dateInstallation"));
         result.put("dateFormation",       getAttr(user, "dateFormation"));
         result.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
@@ -113,8 +116,8 @@ public class AuthService {
             .get(userId)
             .toRepresentation();
 
-        String firstName         = user.getFirstName() != null ? user.getFirstName() : "";
-        String lastName          = user.getLastName()  != null ? user.getLastName()  : "";
+        String firstName = user.getFirstName() != null ? user.getFirstName() : "";
+        String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
 
         List<String> roles = keycloak.realm(realm).users()
                 .get(userId)
@@ -141,12 +144,15 @@ public class AuthService {
         // Section 2 — Profil professionnel
         profile.put("genre",               getAttr(user, "genre"));
         profile.put("dateNaissance",       getAttr(user, "dateNaissance"));
-        profile.put("telephone",           getAttr(user, "telephone"));
+        profile.put("contact1",            getAttr(user, "contact1"));
+        profile.put("contact2",            getAttr(user, "contact2"));
+        profile.put("emailSecondaire",     getAttr(user, "emailSecondaire"));
         profile.put("departement",         getAttr(user, "departement"));
         profile.put("posteOccupe",         getAttr(user, "posteOccupe"));
         profile.put("dateNomination",      getAttr(user, "dateNomination"));
         // Section 3 — Parcours de formation
-        profile.put("cohorte",             getAttr(user, "cohorte"));
+        profile.put("cohorte1",            getAttr(user, "cohorte1"));
+        profile.put("cohorte2",            getAttr(user, "cohorte2"));
         profile.put("dateInstallation",    getAttr(user, "dateInstallation"));
         profile.put("dateFormation",       getAttr(user, "dateFormation"));
         profile.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
@@ -167,10 +173,10 @@ public class AuthService {
         if (attributes == null) attributes = new HashMap<>();
 
         String[] attrKeys = {
-            "genre", "dateNaissance", "telephone", "departement",
-            "posteOccupe", "dateNomination",
-            "cohorte", "dateInstallation", "dateFormation", "derniereMiseANiveau",
-            "nombreSitesGeres", "typeBatiment"
+            "genre", "dateNaissance", "contact1", "contact2", "emailSecondaire",
+            "departement", "posteOccupe", "dateNomination",
+            "cohorte1", "cohorte2", "dateInstallation", "dateFormation",
+            "derniereMiseANiveau", "nombreSitesGeres", "typeBatiment"
         };
 
         for (String key : attrKeys) {
