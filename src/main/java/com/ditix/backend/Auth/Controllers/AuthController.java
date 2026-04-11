@@ -43,7 +43,16 @@ public class AuthController {
         return ResponseEntity.ok(authService.getUserProfile(userId, score));
     }
 
-    // N'importe quel user peut sauvegarder la position de son service
+    @PatchMapping("/me/profile")
+    public ResponseEntity<Map<String, String>> updateMyProfile(
+            JwtAuthenticationToken authentication,
+            @RequestBody Map<String, String> body
+    ) {
+        String userId = authentication.getToken().getSubject();
+        authService.updateUserProfile(userId, body);
+        return ResponseEntity.ok(Map.of("message", "Profil mis à jour"));
+    }
+
     @PatchMapping("/me/location")
     public ResponseEntity<Map<String, String>> updateMyLocation(
             JwtAuthenticationToken authentication,
@@ -52,7 +61,6 @@ public class AuthController {
         String userId    = authentication.getToken().getSubject();
         String latitude  = body.get("latitude");
         String longitude = body.get("longitude");
-
         if (latitude == null || longitude == null) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", "latitude et longitude requis"));
@@ -61,7 +69,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Position mise à jour"));
     }
 
-    // Tous les users avec leur position pour la map
     @GetMapping("/users/locations")
     public ResponseEntity<List<Map<String, Object>>> getAllUsersWithLocation() {
         return ResponseEntity.ok(authService.getAllUsersWithLocation());

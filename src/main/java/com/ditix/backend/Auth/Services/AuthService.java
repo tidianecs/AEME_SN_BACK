@@ -107,6 +107,12 @@ public class AuthService {
         String membershipService = getAttr(user, "membershipService");
         String serviceLatitude   = getAttr(user, "serviceLatitude");
         String serviceLongitude  = getAttr(user, "serviceLongitude");
+        String genre             = getAttr(user, "genre");
+        String dateNaissance     = getAttr(user, "dateNaissance");
+        String telephone         = getAttr(user, "telephone");
+        String departement       = getAttr(user, "departement");
+        String posteOccupe       = getAttr(user, "posteOccupe");
+        String dateNomination    = getAttr(user, "dateNomination");
 
         List<String> roles = keycloak.realm(realm).users()
                 .get(userId)
@@ -130,7 +136,41 @@ public class AuthService {
         profile.put("score",             score);
         profile.put("serviceLatitude",   serviceLatitude);
         profile.put("serviceLongitude",  serviceLongitude);
+        profile.put("genre",             genre);
+        profile.put("dateNaissance",     dateNaissance);
+        profile.put("telephone",         telephone);
+        profile.put("departement",       departement);
+        profile.put("posteOccupe",       posteOccupe);
+        profile.put("dateNomination",    dateNomination);
         return profile;
+    }
+
+    public void updateUserProfile(String userId, Map<String, String> fields) {
+        UserRepresentation user = keycloak
+            .realm(realm)
+            .users()
+            .get(userId)
+            .toRepresentation();
+
+        Map<String, List<String>> attributes = user.getAttributes();
+        if (attributes == null) attributes = new HashMap<>();
+
+        String[] attrKeys = { "genre", "dateNaissance", "telephone", "departement", "posteOccupe", "dateNomination" };
+        for (String key : attrKeys) {
+            if (fields.containsKey(key) && fields.get(key) != null) {
+                attributes.put(key, Collections.singletonList(fields.get(key)));
+            }
+        }
+
+        if (fields.containsKey("firstName") && fields.get("firstName") != null) {
+            user.setFirstName(fields.get("firstName"));
+        }
+        if (fields.containsKey("lastName") && fields.get("lastName") != null) {
+            user.setLastName(fields.get("lastName"));
+        }
+
+        user.setAttributes(attributes);
+        keycloak.realm(realm).users().get(userId).update(user);
     }
 
     public void updateMembershipService(String userId, String membershipService) {
@@ -231,7 +271,6 @@ public class AuthService {
         keycloak.realm(realm).users().get(userId).remove();
     }
 
-    // Helper pour lire un attribut Keycloak
     private String getAttr(UserRepresentation user, String key) {
         if (user.getAttributes() == null) return "";
         List<String> vals = user.getAttributes().get(key);
