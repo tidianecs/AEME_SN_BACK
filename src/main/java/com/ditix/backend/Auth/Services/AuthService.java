@@ -74,7 +74,7 @@ public class AuthService {
         }
     }
 
-    public Map<String, String> getUserById(String userId) {
+    public Map<String, Object> getUserById(String userId) {
         UserRepresentation user = keycloak
             .realm(realm)
             .users()
@@ -83,16 +83,21 @@ public class AuthService {
 
         String firstName = user.getFirstName() != null ? user.getFirstName() : "";
         String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
-        String membershipService = getAttr(user, "membershipService");
 
-        return Map.of(
-            "id",                user.getId(),
-            "email",             user.getEmail() != null ? user.getEmail() : "",
-            "firstName",         firstName,
-            "lastName",          lastName,
-            "fullName",          (firstName + " " + lastName).trim(),
-            "membershipService", membershipService
-        );
+        Map<String, Object> result = new HashMap<>();
+        result.put("id",                user.getId());
+        result.put("email",             user.getEmail() != null ? user.getEmail() : "");
+        result.put("firstName",         firstName);
+        result.put("lastName",          lastName);
+        result.put("fullName",          (firstName + " " + lastName).trim());
+        result.put("membershipService", getAttr(user, "membershipService"));
+        result.put("genre",             getAttr(user, "genre"));
+        result.put("dateNaissance",     getAttr(user, "dateNaissance"));
+        result.put("telephone",         getAttr(user, "telephone"));
+        result.put("departement",       getAttr(user, "departement"));
+        result.put("posteOccupe",       getAttr(user, "posteOccupe"));
+        result.put("dateNomination",    getAttr(user, "dateNomination"));
+        return result;
     }
 
     public Map<String, Object> getUserProfile(String userId, int score) {
