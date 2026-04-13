@@ -79,10 +79,10 @@ public class AuthController {
         return ResponseEntity.ok(authService.getUserById(userId));
     }
 
-    @GetMapping("/test-sentry")
-    public ResponseEntity<String> testSentry() {
-        throw new RuntimeException("Test Sentry AEME — ceci est une erreur de test");
-    }
+    // @GetMapping("/test-sentry")
+    // public ResponseEntity<String> testSentry() {
+    //     throw new RuntimeException("Test Sentry AEME — ceci est une erreur de test");
+    // }
 
     @GetMapping("/geocode/search")
     public ResponseEntity<String> geocodeSearch(
