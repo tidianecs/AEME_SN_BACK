@@ -42,8 +42,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Split les origines séparées par des virgules
+        String[] origins = allowedOrigins.split(",");
         registry.addEndpoint("/ws")
-            .setAllowedOrigins(allowedOrigins)
+            .setAllowedOrigins(origins)
             .withSockJS();
     }
 
@@ -56,7 +58,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     .getAccessor(message, StompHeaderAccessor.class);
 
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // Récupère le token depuis le header Authorization
                     String authHeader = accessor.getFirstNativeHeader("Authorization");
                     if (authHeader != null && authHeader.startsWith("Bearer ")) {
                         String token = authHeader.substring(7);
