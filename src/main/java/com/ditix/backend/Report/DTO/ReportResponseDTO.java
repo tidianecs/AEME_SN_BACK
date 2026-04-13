@@ -22,17 +22,26 @@ public class ReportResponseDTO {
 
     // Section 3
     private String campagnesCommunication;
+    private String autreCampagnePrecision;
     private Boolean guidePartageCommande;
     private Boolean guidePartagePerformance;
     private Boolean procedureResiliation;
     private Boolean modificationPuissance;
+    private String pieceJustificativeModificationName;
     private Boolean consommationsNullesIdentifiees;
+    private String actionConsommationsNulles;
     private Boolean estimationsRecensees;
+    private String actionEstimations;
     private Boolean batteriesCondensateursInstallees;
+    private Integer nombreBatteriesCondensateurs;
     private Boolean cadastreEnergetiqueRealise;
     private Boolean indexTransmis;
+    private LocalDateTime dateIndexTransmis;
+    private String indexConsommation;
     private Boolean plateformeDigitale;
+    private Boolean suiviPlateformeDigitale;
     private String autresActivites;
+    private String autreActivitePrecision;
     private String contraintes;
     private String recommandations;
 
@@ -41,110 +50,76 @@ public class ReportResponseDTO {
     private String autresDocumentsName;
 
     public ReportResponseDTO(Report report) {
-        this.id                             = report.getId();
-        this.reportStatus                   = report.getReportStatus().name();
-        this.createdByUserId                = report.getCreatedByUserId();
-        this.createdAt                      = report.getCreatedAt();
-        this.updatedAt                      = report.getUpdatedAt();
-        this.reportDate                     = report.getReportDate();
-        this.nomGestionnaire                = report.getNomGestionnaire();
-        this.serviceAppartenance            = report.getServiceAppartenance();
-        this.nombreBatiments                = report.getNombreBatiments();
-        this.numeroPoliceSenelec            = report.getNumeroPoliceSenelec();
-        this.campagnesCommunication         = report.getCampagnesCommunication();
-        this.guidePartageCommande           = report.getGuidePartageCommande();
-        this.guidePartagePerformance        = report.getGuidePartagePerformance();
-        this.procedureResiliation           = report.getProcedureResiliation();
-        this.modificationPuissance          = report.getModificationPuissance();
-        this.consommationsNullesIdentifiees = report.getConsommationsNullesIdentifiees();
-        this.estimationsRecensees           = report.getEstimationsRecensees();
-        this.batteriesCondensateursInstallees = report.getBatteriesCondensateursInstallees();
-        this.cadastreEnergetiqueRealise     = report.getCadastreEnergetiqueRealise();
-        this.indexTransmis                  = report.getIndexTransmis();
-        this.plateformeDigitale             = report.getPlateformeDigitale();
-        this.autresActivites                = report.getAutresActivites();
-        this.contraintes                    = report.getContraintes();
-        this.recommandations                = report.getRecommandations();
-        this.illustrationsName              = report.getIllustrationsName();
-        this.autresDocumentsName            = report.getAutresDocumentsName();
+        this.id                                  = report.getId();
+        this.reportStatus                        = report.getReportStatus().name();
+        this.createdByUserId                     = report.getCreatedByUserId();
+        this.createdAt                           = report.getCreatedAt();
+        this.updatedAt                           = report.getUpdatedAt();
+        this.reportDate                          = report.getReportDate();
+        this.nomGestionnaire                     = report.getNomGestionnaire();
+        this.serviceAppartenance                 = report.getServiceAppartenance();
+        this.nombreBatiments                     = report.getNombreBatiments();
+        this.numeroPoliceSenelec                 = report.getNumeroPoliceSenelec();
+        this.campagnesCommunication              = report.getCampagnesCommunication();
+        this.autreCampagnePrecision              = report.getAutreCampagnePrecision();
+        this.guidePartageCommande                = report.getGuidePartageCommande();
+        this.guidePartagePerformance             = report.getGuidePartagePerformance();
+        this.procedureResiliation                = report.getProcedureResiliation();
+        this.modificationPuissance               = report.getModificationPuissance();
+        this.pieceJustificativeModificationName  = report.getPieceJustificativeModificationName();
+        this.consommationsNullesIdentifiees      = report.getConsommationsNullesIdentifiees();
+        this.actionConsommationsNulles           = report.getActionConsommationsNulles();
+        this.estimationsRecensees                = report.getEstimationsRecensees();
+        this.actionEstimations                   = report.getActionEstimations();
+        this.batteriesCondensateursInstallees    = report.getBatteriesCondensateursInstallees();
+        this.nombreBatteriesCondensateurs        = report.getNombreBatteriesCondensateurs();
+        this.cadastreEnergetiqueRealise          = report.getCadastreEnergetiqueRealise();
+        this.indexTransmis                       = report.getIndexTransmis();
+        this.dateIndexTransmis                   = report.getDateIndexTransmis();
+        this.indexConsommation                   = report.getIndexConsommation();
+        this.plateformeDigitale                  = report.getPlateformeDigitale();
+        this.suiviPlateformeDigitale             = report.getSuiviPlateformeDigitale();
+        this.autresActivites                     = report.getAutresActivites();
+        this.autreActivitePrecision              = report.getAutreActivitePrecision();
+        this.contraintes                         = report.getContraintes();
+        this.recommandations                     = report.getRecommandations();
+        this.illustrationsName                   = report.getIllustrationsName();
+        this.autresDocumentsName                 = report.getAutresDocumentsName();
     }
 
-    public Long getId() { 
-        return id; 
-    }
-    public String getReportStatus() { 
-        return reportStatus; 
-    }
-    public String getCreatedByUserId() { 
-        return createdByUserId; 
-    }
-    public LocalDateTime getCreatedAt() { 
-        return createdAt; 
-    }
-    public LocalDateTime getUpdatedAt() { 
-        return updatedAt; 
-    }
-    public LocalDateTime getReportDate() { 
-        return reportDate; 
-    }
-    public String getNomGestionnaire() { 
-        return nomGestionnaire; 
-    }
-    public String getServiceAppartenance() { 
-        return serviceAppartenance; 
-    }
-    public Integer getNombreBatiments() { 
-        return nombreBatiments; 
-    }
-    public String getNumeroPoliceSenelec() { 
-        return numeroPoliceSenelec; 
-    }
-    public String getCampagnesCommunication() { 
-        return campagnesCommunication; 
-    }
-    public Boolean getGuidePartageCommande() { 
-        return guidePartageCommande; 
-    }
-    public Boolean getGuidePartagePerformance() { 
-        return guidePartagePerformance; 
-    }
-    public Boolean getProcedureResiliation() { 
-        return procedureResiliation; 
-    }
-    public Boolean getModificationPuissance() { 
-        return modificationPuissance; 
-    }
-    public Boolean getConsommationsNullesIdentifiees() { 
-        return consommationsNullesIdentifiees; 
-    }
-    public Boolean getEstimationsRecensees() { 
-        return estimationsRecensees; 
-    }
-    public Boolean getBatteriesCondensateursInstallees() { 
-        return batteriesCondensateursInstallees; 
-    }
-    public Boolean getCadastreEnergetiqueRealise() { 
-        return cadastreEnergetiqueRealise; 
-    }
-    public Boolean getIndexTransmis() { 
-        return indexTransmis; 
-    }
-    public Boolean getPlateformeDigitale() { 
-        return plateformeDigitale; 
-    }
-    public String getAutresActivites() { 
-        return autresActivites; 
-    }
-    public String getContraintes() { 
-        return contraintes; 
-    }
-    public String getRecommandations() { 
-        return recommandations; 
-    }
-    public String getIllustrationsName() { 
-        return illustrationsName; 
-    }
-    public String getAutresDocumentsName() { 
-        return autresDocumentsName; 
-    }
+    public Long getId() { return id; }
+    public String getReportStatus() { return reportStatus; }
+    public String getCreatedByUserId() { return createdByUserId; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getReportDate() { return reportDate; }
+    public String getNomGestionnaire() { return nomGestionnaire; }
+    public String getServiceAppartenance() { return serviceAppartenance; }
+    public Integer getNombreBatiments() { return nombreBatiments; }
+    public String getNumeroPoliceSenelec() { return numeroPoliceSenelec; }
+    public String getCampagnesCommunication() { return campagnesCommunication; }
+    public String getAutreCampagnePrecision() { return autreCampagnePrecision; }
+    public Boolean getGuidePartageCommande() { return guidePartageCommande; }
+    public Boolean getGuidePartagePerformance() { return guidePartagePerformance; }
+    public Boolean getProcedureResiliation() { return procedureResiliation; }
+    public Boolean getModificationPuissance() { return modificationPuissance; }
+    public String getPieceJustificativeModificationName() { return pieceJustificativeModificationName; }
+    public Boolean getConsommationsNullesIdentifiees() { return consommationsNullesIdentifiees; }
+    public String getActionConsommationsNulles() { return actionConsommationsNulles; }
+    public Boolean getEstimationsRecensees() { return estimationsRecensees; }
+    public String getActionEstimations() { return actionEstimations; }
+    public Boolean getBatteriesCondensateursInstallees() { return batteriesCondensateursInstallees; }
+    public Integer getNombreBatteriesCondensateurs() { return nombreBatteriesCondensateurs; }
+    public Boolean getCadastreEnergetiqueRealise() { return cadastreEnergetiqueRealise; }
+    public Boolean getIndexTransmis() { return indexTransmis; }
+    public LocalDateTime getDateIndexTransmis() { return dateIndexTransmis; }
+    public String getIndexConsommation() { return indexConsommation; }
+    public Boolean getPlateformeDigitale() { return plateformeDigitale; }
+    public Boolean getSuiviPlateformeDigitale() { return suiviPlateformeDigitale; }
+    public String getAutresActivites() { return autresActivites; }
+    public String getAutreActivitePrecision() { return autreActivitePrecision; }
+    public String getContraintes() { return contraintes; }
+    public String getRecommandations() { return recommandations; }
+    public String getIllustrationsName() { return illustrationsName; }
+    public String getAutresDocumentsName() { return autresDocumentsName; }
 }

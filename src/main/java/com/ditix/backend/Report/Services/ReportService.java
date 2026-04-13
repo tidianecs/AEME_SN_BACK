@@ -34,9 +34,7 @@ public class ReportService {
     private String saveFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) return null;
         Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
         String uniqueFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         Path filePath = uploadPath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), filePath);
@@ -50,17 +48,26 @@ public class ReportService {
             Integer nombreBatiments,
             String numeroPoliceSenelec,
             String campagnesCommunication,
+            String autreCampagnePrecision,
             Boolean guidePartageCommande,
             Boolean guidePartagePerformance,
             Boolean procedureResiliation,
             Boolean modificationPuissance,
+            MultipartFile pieceJustificativeModification,
             Boolean consommationsNullesIdentifiees,
+            String actionConsommationsNulles,
             Boolean estimationsRecensees,
+            String actionEstimations,
             Boolean batteriesCondensateursInstallees,
+            Integer nombreBatteriesCondensateurs,
             Boolean cadastreEnergetiqueRealise,
             Boolean indexTransmis,
+            LocalDateTime dateIndexTransmis,
+            String indexConsommation,
             Boolean plateformeDigitale,
+            Boolean suiviPlateformeDigitale,
             String autresActivites,
+            String autreActivitePrecision,
             String contraintes,
             String recommandations,
             MultipartFile illustrations,
@@ -68,8 +75,9 @@ public class ReportService {
             String userId
     ) throws IOException {
 
-        String illustrationsPath  = saveFile(illustrations);
-        String autresDocumentsPath = saveFile(autresDocuments);
+        String illustrationsPath              = saveFile(illustrations);
+        String autresDocumentsPath            = saveFile(autresDocuments);
+        String pieceJustificativeModPath      = saveFile(pieceJustificativeModification);
 
         Report report = Report.builder()
                 .createdByUserId(userId)
@@ -79,17 +87,29 @@ public class ReportService {
                 .nombreBatiments(nombreBatiments)
                 .numeroPoliceSenelec(numeroPoliceSenelec)
                 .campagnesCommunication(campagnesCommunication)
+                .autreCampagnePrecision(autreCampagnePrecision)
                 .guidePartageCommande(guidePartageCommande)
                 .guidePartagePerformance(guidePartagePerformance)
                 .procedureResiliation(procedureResiliation)
                 .modificationPuissance(modificationPuissance)
+                .pieceJustificativeModificationPath(pieceJustificativeModPath)
+                .pieceJustificativeModificationName(
+                    pieceJustificativeModification != null && !pieceJustificativeModification.isEmpty()
+                        ? pieceJustificativeModification.getOriginalFilename() : null)
                 .consommationsNullesIdentifiees(consommationsNullesIdentifiees)
+                .actionConsommationsNulles(actionConsommationsNulles)
                 .estimationsRecensees(estimationsRecensees)
+                .actionEstimations(actionEstimations)
                 .batteriesCondensateursInstallees(batteriesCondensateursInstallees)
+                .nombreBatteriesCondensateurs(nombreBatteriesCondensateurs)
                 .cadastreEnergetiqueRealise(cadastreEnergetiqueRealise)
                 .indexTransmis(indexTransmis)
+                .dateIndexTransmis(dateIndexTransmis)
+                .indexConsommation(indexConsommation)
                 .plateformeDigitale(plateformeDigitale)
+                .suiviPlateformeDigitale(suiviPlateformeDigitale)
                 .autresActivites(autresActivites)
+                .autreActivitePrecision(autreActivitePrecision)
                 .contraintes(contraintes)
                 .recommandations(recommandations)
                 .illustrationsPath(illustrationsPath)
@@ -115,19 +135,15 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    // Accessible à tous — plus de vérification ownership
     public ReportResponseDTO getReportById(Long id) {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
         return new ReportResponseDTO(report);
     }
 
-    // Suppression — garde la vérification ownership
     public void deleteReport(Long id, String userId) throws IOException {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
         if (!report.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
@@ -137,11 +153,9 @@ public class ReportService {
 
     public ReportResponseDTO approveReport(Long id) {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
         if (report.getReportStatus() != ReportStatus.SUBMITTED) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être approuvé");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être approuvé");
         }
         report.setReportStatus(ReportStatus.APPROVED);
         return new ReportResponseDTO(reportRepository.save(report));
@@ -149,40 +163,34 @@ public class ReportService {
 
     public ReportResponseDTO rejectReport(Long id) {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
         if (report.getReportStatus() != ReportStatus.SUBMITTED) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être rejeté");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seul un rapport SUBMITTED peut être rejeté");
         }
         report.setReportStatus(ReportStatus.REJECTED);
         return new ReportResponseDTO(reportRepository.save(report));
     }
 
     public int calculateScore(String userId) {
-        long approved = reportRepository.countByCreatedByUserIdAndReportStatus(
-            userId, ReportStatus.APPROVED);
-        long rejected = reportRepository.countByCreatedByUserIdAndReportStatus(
-            userId, ReportStatus.REJECTED);
+        long approved = reportRepository.countByCreatedByUserIdAndReportStatus(userId, ReportStatus.APPROVED);
+        long rejected = reportRepository.countByCreatedByUserIdAndReportStatus(userId, ReportStatus.REJECTED);
         return (int) (approved * 4 - rejected * 5);
     }
 
     public Report getRawReport(Long id) {
         return reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
     }
 
     public List<ReportResponseDTO> getReportsByUserId(String userId) {
         return reportRepository.findByCreatedByUserId(userId).stream()
-            .map(ReportResponseDTO::new)
-            .collect(Collectors.toList());
+                .map(ReportResponseDTO::new)
+                .collect(Collectors.toList());
     }
 
     public void deleteReportAdmin(Long id) {
         Report report = reportRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Rapport introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
         deleteFiles(report);
         reportRepository.delete(report);
     }
@@ -193,6 +201,8 @@ public class ReportService {
                 Files.deleteIfExists(Paths.get(report.getIllustrationsPath()));
             if (report.getAutresDocumentsPath() != null)
                 Files.deleteIfExists(Paths.get(report.getAutresDocumentsPath()));
+            if (report.getPieceJustificativeModificationPath() != null)
+                Files.deleteIfExists(Paths.get(report.getPieceJustificativeModificationPath()));
         } catch (IOException e) {
             System.out.println("Erreur suppression fichier : " + e.getMessage());
         }
