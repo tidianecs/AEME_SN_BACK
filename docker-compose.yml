@@ -1,12 +1,8 @@
 services:
-
   postgres:
     image: postgres:16-alpine
     container_name: aeme_postgres
-    environment:
-      POSTGRES_DB: aeme_db
-      POSTGRES_USER: user_db
-      POSTGRES_PASSWORD: password_db
+    env_file: .env
     ports:
       - "5432:5432"
     volumes:
@@ -19,58 +15,35 @@ services:
       retries: 5
 
   keycloak:
-      image: quay.io/keycloak/keycloak:24.0
-      container_name: aeme_keycloak
-      command: start-dev
-      environment:
-        KC_HOSTNAME_URL: https://unrefrained-primal-harlee.ngrok-free.dev
-        KC_HOSTNAME_ADMIN_URL: https://unrefrained-primal-harlee.ngrok-free.dev
-        KC_HOSTNAME_STRICT: "false"
-        KC_HOSTNAME_STRICT_HTTPS: "false"
-        KC_DB: postgres
-        KC_DB_URL: jdbc:postgresql://postgres:5432/aeme_db
-        KC_DB_USERNAME: user_db
-        KC_DB_PASSWORD: password_db
-        KC_DB_SCHEMA: keycloak
-        KEYCLOAK_ADMIN: admin
-        KEYCLOAK_ADMIN_PASSWORD: admin
-        KC_HTTP_PORT: 8080
-      ports:
-        - "8080:8080"
-      depends_on:
-        postgres:
-          condition: service_healthy
-      volumes:
-        - ./keycloak-theme/aeme:/opt/keycloak/themes/aeme
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: aeme_keycloak
+    command: start-dev
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./keycloak-theme/aeme:/opt/keycloak/themes/aeme
 
   backend:
-     build:
-       context: ./backend
-       dockerfile: Dockerfile
-     container_name: aeme_backend
-     ports:
-       - "8081:8081"
-     environment:
-       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aeme_db
-       SPRING_DATASOURCE_USERNAME: user_db
-       SPRING_DATASOURCE_PASSWORD: password_db
-       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: https://unrefrained-primal-harlee.ngrok-free.dev/realms/aeme
-       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: https://unrefrained-primal-harlee.ngrok-free.dev/realms/aeme/protocol/openid-connect/certs
-       KEYCLOAK_SERVER_URL: http://keycloak:8080
-       KEYCLOAK_ADMIN_REALM: aeme
-       KEYCLOAK_ADMIN_CLIENT_ID: aeme-client
-       KEYCLOAK_ADMIN_CLIENT_SECRET: BDZgYGfYfOnclVSAUPSIfoA1t0kyA7Ja
-       SENTRY_DSN: https://54ab0495e38221ea99a6e4bf15d88cf9@o4510801178460160.ingest.us.sentry.io/4511202969583616
-       CORS_ALLOWED_ORIGINS: http://localhost:5173
-       UPLOAD_DIR: uploads
-     depends_on:
-       postgres:
-         condition: service_healthy
-       keycloak:
-         condition: service_started
-     volumes:
-       - uploads_data:/app/uploads
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aeme_backend
+    ports:
+      - "8081:8081"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    volumes:
+      - uploads_data:/app/uploads
 
 volumes:
   postgres_data:
   uploads_data:
+
