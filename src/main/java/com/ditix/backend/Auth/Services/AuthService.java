@@ -3,6 +3,7 @@ package com.ditix.backend.Auth.Services;
 import com.ditix.backend.Core.EmailService;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,31 +75,29 @@ public class AuthService {
             updateMembershipService(userId, membershipService);
         }
 
+        String tempPassword = generateTempPassword();
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(tempPassword);
+        credential.setTemporary(true);
+        keycloak.realm(realm).users().get(userId).resetPassword(credential);
+
         try {
-            String resetLink = generateActionLink(userId);
-            emailService.sendInvitationEmail(email, firstName, resetLink);
+            emailService.sendInvitationEmail(email, firstName, tempPassword, keycloakServerUrl);
         } catch (Exception e) {
             System.err.println("Erreur envoi email invitation : " + e.getMessage());
         }
     }
 
-    private String generateActionLink(String userId) {
-        try {
-            keycloak.realm(realm)
-                .users()
-                .get(userId)
-                .executeActionsEmail(
-                    "frontend-aeme",
-                    keycloakServerUrl + "/realms/" + realm + "/account",
-                    List.of("UPDATE_PASSWORD", "UPDATE_PROFILE")
-                );
-        } catch (Exception e) {
-            System.err.println("executeActionsEmail ignoré (SMTP bloqué) : " + e.getMessage());
+    private String generateTempPassword() {
+        String chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$%";
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
         }
-
-        return keycloakServerUrl + "/realms/" + realm +
-               "/protocol/openid-connect/auth?client_id=frontend-aeme" +
-               "&response_type=code&scope=openid&kc_action=UPDATE_PASSWORD";
+        return sb.toString();
     }
 
     public Map<String, Object> getUserById(String userId) {

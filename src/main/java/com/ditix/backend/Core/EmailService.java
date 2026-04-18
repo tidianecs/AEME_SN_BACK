@@ -16,7 +16,12 @@ public class EmailService {
     @Value("${resend.from-email}")
     private String fromEmail;
 
-    public void sendInvitationEmail(String toEmail, String firstName, String resetLink) {
+    public void sendInvitationEmail(
+            String toEmail,
+            String firstName,
+            String tempPassword,
+            String keycloakServerUrl
+    ) {
         try {
             Resend resend = new Resend(apiKey);
 
@@ -24,26 +29,49 @@ public class EmailService {
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <div style="background-color: #003366; padding: 30px; text-align: center;">
                         <h1 style="color: white; margin: 0;">AEME Energy Manager</h1>
-                        <p style="color: #a0c4ff; margin: 5px 0 0 0;">Agence pour l'Économie et la Maîtrise de l'Énergie</p>
+                        <p style="color: #a0c4ff; margin: 5px 0 0 0;">
+                            Agence pour l'Économie et la Maîtrise de l'Énergie
+                        </p>
                     </div>
                     <div style="padding: 40px 30px; background-color: #f9f9f9;">
                         <h2 style="color: #003366;">Bienvenue, %s !</h2>
                         <p style="color: #555; line-height: 1.6;">
-                            Votre compte sur la plateforme AEME Energy Manager a été créé.
-                            Cliquez sur le bouton ci-dessous pour définir votre mot de passe
-                            et accéder à votre espace.
+                            Votre compte sur la plateforme AEME Energy Manager a été créé
+                            par un administrateur. Voici vos identifiants temporaires pour
+                            votre première connexion :
                         </p>
+                        <div style="background-color: #e8f4fd; border-left: 4px solid #003366;
+                                    padding: 20px; border-radius: 4px; margin: 25px 0;">
+                            <p style="margin: 0 0 10px 0; color: #333;">
+                                <strong>Email :</strong> %s
+                            </p>
+                            <p style="margin: 0; color: #333;">
+                                <strong>Mot de passe temporaire :</strong>
+                                <span style="font-family: monospace; background-color: #fff;
+                                             padding: 3px 8px; border-radius: 3px;
+                                             font-size: 16px; letter-spacing: 2px;">
+                                    %s
+                                </span>
+                            </p>
+                        </div>
+                        <p style="color: #555; line-height: 1.6;">
+                            Lors de votre première connexion, vous serez invité à :
+                        </p>
+                        <ul style="color: #555; line-height: 1.8;">
+                            <li>Changer votre mot de passe</li>
+                            <li>Mettre à jour votre profil</li>
+                        </ul>
                         <div style="text-align: center; margin: 40px 0;">
                             <a href="%s"
                                style="background-color: #003366; color: white; padding: 15px 35px;
                                       text-decoration: none; border-radius: 8px; font-size: 16px;
                                       font-weight: bold; display: inline-block;">
-                                Activer mon compte
+                                Accéder à la plateforme
                             </a>
                         </div>
                         <p style="color: #888; font-size: 13px;">
-                            Ce lien est valable 24 heures. Si vous n'avez pas demandé ce compte,
-                            ignorez cet email.
+                            Pour des raisons de sécurité, veuillez changer votre mot de passe
+                            dès votre première connexion. Ne partagez pas vos identifiants.
                         </p>
                     </div>
                     <div style="background-color: #003366; padding: 20px; text-align: center;">
@@ -52,7 +80,7 @@ public class EmailService {
                         </p>
                     </div>
                 </div>
-                """.formatted(firstName, resetLink);
+                """.formatted(firstName, toEmail, tempPassword, keycloakServerUrl);
 
             CreateEmailOptions params = CreateEmailOptions.builder()
                 .from(fromEmail)
@@ -70,7 +98,12 @@ public class EmailService {
         }
     }
 
-    public void sendPasswordResetEmail(String toEmail, String firstName, String resetLink) {
+    public void sendPasswordResetEmail(
+            String toEmail,
+            String firstName,
+            String tempPassword,
+            String keycloakServerUrl
+    ) {
         try {
             Resend resend = new Resend(apiKey);
 
@@ -78,25 +111,40 @@ public class EmailService {
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <div style="background-color: #003366; padding: 30px; text-align: center;">
                         <h1 style="color: white; margin: 0;">AEME Energy Manager</h1>
-                        <p style="color: #a0c4ff; margin: 5px 0 0 0;">Agence pour l'Économie et la Maîtrise de l'Énergie</p>
+                        <p style="color: #a0c4ff; margin: 5px 0 0 0;">
+                            Agence pour l'Économie et la Maîtrise de l'Énergie
+                        </p>
                     </div>
                     <div style="padding: 40px 30px; background-color: #f9f9f9;">
                         <h2 style="color: #003366;">Réinitialisation de mot de passe</h2>
                         <p style="color: #555; line-height: 1.6;">
-                            Bonjour %s, vous avez demandé une réinitialisation de votre mot de passe.
-                            Cliquez sur le bouton ci-dessous pour en définir un nouveau.
+                            Bonjour %s, voici votre nouveau mot de passe temporaire :
                         </p>
+                        <div style="background-color: #e8f4fd; border-left: 4px solid #003366;
+                                    padding: 20px; border-radius: 4px; margin: 25px 0;">
+                            <p style="margin: 0 0 10px 0; color: #333;">
+                                <strong>Email :</strong> %s
+                            </p>
+                            <p style="margin: 0; color: #333;">
+                                <strong>Mot de passe temporaire :</strong>
+                                <span style="font-family: monospace; background-color: #fff;
+                                             padding: 3px 8px; border-radius: 3px;
+                                             font-size: 16px; letter-spacing: 2px;">
+                                    %s
+                                </span>
+                            </p>
+                        </div>
                         <div style="text-align: center; margin: 40px 0;">
                             <a href="%s"
                                style="background-color: #003366; color: white; padding: 15px 35px;
                                       text-decoration: none; border-radius: 8px; font-size: 16px;
                                       font-weight: bold; display: inline-block;">
-                                Réinitialiser mon mot de passe
+                                Se connecter
                             </a>
                         </div>
                         <p style="color: #888; font-size: 13px;">
-                            Ce lien est valable 24 heures. Si vous n'êtes pas à l'origine de
-                            cette demande, ignorez cet email.
+                            Si vous n'êtes pas à l'origine de cette demande, contactez
+                            votre administrateur immédiatement.
                         </p>
                     </div>
                     <div style="background-color: #003366; padding: 20px; text-align: center;">
@@ -105,7 +153,7 @@ public class EmailService {
                         </p>
                     </div>
                 </div>
-                """.formatted(firstName, resetLink);
+                """.formatted(firstName, toEmail, tempPassword, keycloakServerUrl);
 
             CreateEmailOptions params = CreateEmailOptions.builder()
                 .from(fromEmail)
@@ -115,9 +163,10 @@ public class EmailService {
                 .build();
 
             resend.emails().send(params);
+            System.out.println("Email reset envoyé à : " + toEmail);
 
         } catch (ResendException e) {
-            System.err.println("Erreur envoi email Resend : " + e.getMessage());
+            System.err.println("Erreur envoi email reset : " + e.getMessage());
             throw new RuntimeException("Erreur lors de l'envoi de l'email de réinitialisation");
         }
     }
