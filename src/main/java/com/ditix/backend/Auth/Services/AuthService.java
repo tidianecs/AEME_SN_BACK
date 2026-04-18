@@ -1,5 +1,6 @@
 package com.ditix.backend.Auth.Services;
 
+import com.ditix.backend.Core.EmailService;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -19,12 +20,17 @@ import java.util.stream.Collectors;
 public class AuthService {
 
     private final Keycloak keycloak;
+    private final EmailService emailService;
 
     @Value("${keycloak.admin.realm}")
     private String realm;
 
-    public AuthService(Keycloak keycloak) {
+    @Value("${keycloak.server-url}")
+    private String keycloakServerUrl;
+
+    public AuthService(Keycloak keycloak, EmailService emailService) {
         this.keycloak = keycloak;
+        this.emailService = emailService;
     }
 
     public void inviteUser(String email, String firstName, String lastName, String role, String membershipService) {
@@ -41,8 +47,8 @@ public class AuthService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setEnabled(true);
-        user.setEmailVerified(false);
-        user.setRequiredActions(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD", "UPDATE_PROFILE"));
+        user.setEmailVerified(true);
+        user.setRequiredActions(List.of("UPDATE_PASSWORD", "UPDATE_PROFILE"));
 
         Response response = keycloak.realm(realm).users().create(user);
 
@@ -68,10 +74,30 @@ public class AuthService {
         }
 
         try {
-            keycloak.realm(realm).users().get(userId).sendVerifyEmail();
+            String resetLink = generateActionLink(userId);
+            emailService.sendInvitationEmail(email, firstName, resetLink);
         } catch (Exception e) {
-            System.out.println("Email d'invitation non envoyé : " + e.getMessage());
+            System.err.println("Erreur envoi email invitation : " + e.getMessage());
         }
+    }
+
+    private String generateActionLink(String userId) {
+        try {
+            keycloak.realm(realm)
+                .users()
+                .get(userId)
+                .executeActionsEmail(
+                    "frontend-aeme",
+                    keycloakServerUrl + "/realms/" + realm + "/account",
+                    List.of("UPDATE_PASSWORD", "UPDATE_PROFILE")
+                );
+        } catch (Exception e) {
+            System.err.println("executeActionsEmail ignoré (SMTP bloqué) : " + e.getMessage());
+        }
+
+        return keycloakServerUrl + "/realms/" + realm +
+               "/protocol/openid-connect/auth?client_id=frontend-aeme" +
+               "&response_type=code&scope=openid&kc_action=UPDATE_PASSWORD";
     }
 
     public Map<String, Object> getUserById(String userId) {
@@ -99,8 +125,7 @@ public class AuthService {
         result.put("departement",         getAttr(user, "departement"));
         result.put("posteOccupe",         getAttr(user, "posteOccupe"));
         result.put("dateNomination",      getAttr(user, "dateNomination"));
-        result.put("cohorte1",            getAttr(user, "cohorte1"));
-        result.put("cohorte2",            getAttr(user, "cohorte2"));
+        result.put("cohorte",             getAttr(user, "cohorte"));
         result.put("dateInstallation",    getAttr(user, "dateInstallation"));
         result.put("dateFormation",       getAttr(user, "dateFormation"));
         result.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
@@ -141,7 +166,6 @@ public class AuthService {
         profile.put("score",               score);
         profile.put("serviceLatitude",     getAttr(user, "serviceLatitude"));
         profile.put("serviceLongitude",    getAttr(user, "serviceLongitude"));
-        // Section 2 — Profil professionnel
         profile.put("genre",               getAttr(user, "genre"));
         profile.put("dateNaissance",       getAttr(user, "dateNaissance"));
         profile.put("contact1",            getAttr(user, "contact1"));
@@ -150,13 +174,10 @@ public class AuthService {
         profile.put("departement",         getAttr(user, "departement"));
         profile.put("posteOccupe",         getAttr(user, "posteOccupe"));
         profile.put("dateNomination",      getAttr(user, "dateNomination"));
-        // Section 3 — Parcours de formation
-        profile.put("cohorte1",            getAttr(user, "cohorte1"));
-        profile.put("cohorte2",            getAttr(user, "cohorte2"));
+        profile.put("cohorte",             getAttr(user, "cohorte"));
         profile.put("dateInstallation",    getAttr(user, "dateInstallation"));
         profile.put("dateFormation",       getAttr(user, "dateFormation"));
         profile.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
-        // Section 4 — Périmètre de gestion
         profile.put("nombreSitesGeres",    getAttr(user, "nombreSitesGeres"));
         profile.put("typeBatiment",        getAttr(user, "typeBatiment"));
         return profile;
@@ -175,7 +196,7 @@ public class AuthService {
         String[] attrKeys = {
             "genre", "dateNaissance", "contact1", "contact2", "emailSecondaire",
             "departement", "posteOccupe", "dateNomination",
-            "cohorte1", "cohorte2", "dateInstallation", "dateFormation",
+            "cohorte", "dateInstallation", "dateFormation",
             "derniereMiseANiveau", "nombreSitesGeres", "typeBatiment"
         };
 
@@ -208,6 +229,10 @@ public class AuthService {
         attributes.put("membershipService", Collections.singletonList(membershipService));
         user.setAttributes(attributes);
         keycloak.realm(realm).users().get(userId).update(user);
+    }
+
+    public void updateMyMembership(String userId, String membershipService) {
+        updateMembershipService(userId, membershipService);
     }
 
     public void updateServiceLocation(String userId, String latitude, String longitude) {
