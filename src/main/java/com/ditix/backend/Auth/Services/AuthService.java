@@ -53,7 +53,7 @@ public class AuthService {
         user.setLastName(lastName);
         user.setEnabled(true);
         user.setEmailVerified(true);
-        user.setRequiredActions(List.of("UPDATE_PASSWORD", "UPDATE_PROFILE"));
+        user.setRequiredActions(List.of("UPDATE_PASSWORD"));
 
         Response response = keycloak.realm(realm).users().create(user);
 
