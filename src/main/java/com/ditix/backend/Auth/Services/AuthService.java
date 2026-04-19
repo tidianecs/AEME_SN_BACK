@@ -30,6 +30,9 @@ public class AuthService {
     @Value("${keycloak.server-url}")
     private String keycloakServerUrl;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     public AuthService(Keycloak keycloak, EmailService emailService) {
         this.keycloak = keycloak;
         this.emailService = emailService;
@@ -84,7 +87,7 @@ public class AuthService {
         keycloak.realm(realm).users().get(userId).resetPassword(credential);
 
         try {
-            emailService.sendInvitationEmail(email, firstName, tempPassword, keycloakServerUrl);
+            emailService.sendInvitationEmail(email, firstName, tempPassword, frontendUrl);
         } catch (Exception e) {
             System.err.println("Erreur envoi email invitation : " + e.getMessage());
         }

@@ -16,11 +16,15 @@ public class EmailService {
     @Value("${resend.from-email}")
     private String fromEmail;
 
+    public String getFromEmail() {
+        return fromEmail;
+    }
+
     public void sendInvitationEmail(
             String toEmail,
             String firstName,
             String tempPassword,
-            String keycloakServerUrl
+            String frontendUrl
     ) {
         try {
             Resend resend = new Resend(apiKey);
@@ -37,8 +41,8 @@ public class EmailService {
                         <h2 style="color: #003366;">Bienvenue, %s !</h2>
                         <p style="color: #555; line-height: 1.6;">
                             Votre compte sur la plateforme AEME Energy Manager a été créé
-                            par un administrateur. Voici vos identifiants temporaires pour
-                            votre première connexion :
+                            par un administrateur. Voici vos identifiants pour votre
+                            première connexion :
                         </p>
                         <div style="background-color: #e8f4fd; border-left: 4px solid #003366;
                                     padding: 20px; border-radius: 4px; margin: 25px 0;">
@@ -80,12 +84,12 @@ public class EmailService {
                         </p>
                     </div>
                 </div>
-                """.formatted(firstName, toEmail, tempPassword, keycloakServerUrl);
+                """.formatted(firstName, toEmail, tempPassword, frontendUrl);
 
             CreateEmailOptions params = CreateEmailOptions.builder()
                 .from(fromEmail)
                 .to(toEmail)
-                .subject("Activation de votre compte AEME Energy Manager")
+                .subject("Votre accès à la plateforme AEME Energy Manager")
                 .html(html)
                 .build();
 
@@ -102,7 +106,7 @@ public class EmailService {
             String toEmail,
             String firstName,
             String tempPassword,
-            String keycloakServerUrl
+            String frontendUrl
     ) {
         try {
             Resend resend = new Resend(apiKey);
@@ -153,7 +157,7 @@ public class EmailService {
                         </p>
                     </div>
                 </div>
-                """.formatted(firstName, toEmail, tempPassword, keycloakServerUrl);
+                """.formatted(firstName, toEmail, tempPassword, frontendUrl);
 
             CreateEmailOptions params = CreateEmailOptions.builder()
                 .from(fromEmail)
