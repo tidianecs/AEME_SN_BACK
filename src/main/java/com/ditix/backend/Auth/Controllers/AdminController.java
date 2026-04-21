@@ -47,8 +47,12 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<Map<String, String>>> getAllUsers() {
-        return ResponseEntity.ok(authService.getAllUsers());
+    public ResponseEntity<Map<String, Object>> getAllUsers(
+            @RequestParam(defaultValue = "0")  int first,
+            @RequestParam(defaultValue = "20") int max,
+            @RequestParam(required = false)    String search
+    ) {
+        return ResponseEntity.ok(authService.getAllUsersPaginated(first, max, search));
     }
 
     @PatchMapping("/users/{userId}/membership")
@@ -91,10 +95,4 @@ public class AdminController {
         authService.deleteUser(userId);
         return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
     }
-
-    // @DeleteMapping("/reports/{id}")
-    // public ResponseEntity<Map<String, String>> deleteReportAdmin(@PathVariable Long id) {
-    //     reportService.deleteReportAdmin(id);
-    //     return ResponseEntity.ok(Map.of("message", "Rapport supprimé"));
-    // }
 }

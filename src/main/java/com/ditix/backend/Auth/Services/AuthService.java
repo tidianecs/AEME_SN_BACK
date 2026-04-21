@@ -264,6 +264,53 @@ public class AuthService {
         keycloak.realm(realm).users().get(userId).update(user);
     }
 
+    public Map<String, Object> getAllUsersPaginated(int first, int max, String search) {
+        List<UserRepresentation> users;
+        int total;
+
+        if (search != null && !search.isBlank()) {
+            users = keycloak.realm(realm).users().search(search, first, max);
+            total = keycloak.realm(realm).users().count(search);
+        } else {
+            users = keycloak.realm(realm).users().list(first, max);
+            total = keycloak.realm(realm).users().count();
+        }
+
+        List<Map<String, String>> result = users.stream()
+            .map(user -> {
+                List<String> roles = keycloak.realm(realm).users()
+                        .get(user.getId())
+                        .roles().realmLevel().listEffective()
+                        .stream()
+                        .map(RoleRepresentation::getName)
+                        .filter(r -> r.equals("user") || r.equals("admin"))
+                        .collect(Collectors.toList());
+
+                String role = roles.contains("admin") ? "admin" :
+                              roles.contains("user") ? "user" : "none";
+
+                return Map.of(
+                    "id",                user.getId(),
+                    "email",             user.getEmail() != null ? user.getEmail() : "",
+                    "firstName",         user.getFirstName() != null ? user.getFirstName() : "",
+                    "lastName",          user.getLastName()  != null ? user.getLastName()  : "",
+                    "fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                                         (user.getLastName()  != null ? user.getLastName()  : "")).trim(),
+                    "role",              role,
+                    "emailVerified",     String.valueOf(user.isEmailVerified()),
+                    "membershipService", getAttr(user, "membershipService")
+                );
+            })
+            .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("users", result);
+        response.put("total", total);
+        response.put("first", first);
+        response.put("max",   max);
+        return response;
+    }
+
     public List<Map<String, Object>> getAllUsersWithLocation() {
         return keycloak.realm(realm).users().list().stream()
             .filter(user -> user.isEmailVerified())
@@ -291,35 +338,6 @@ public class AuthService {
                 return u;
             })
             .filter(u -> !((String) u.get("membershipService")).isBlank())
-            .collect(Collectors.toList());
-    }
-
-    public List<Map<String, String>> getAllUsers() {
-        return keycloak.realm(realm).users().list().stream()
-            .map(user -> {
-                List<String> roles = keycloak.realm(realm).users()
-                        .get(user.getId())
-                        .roles().realmLevel().listEffective()
-                        .stream()
-                        .map(RoleRepresentation::getName)
-                        .filter(r -> r.equals("user") || r.equals("admin"))
-                        .collect(Collectors.toList());
-
-                String role = roles.contains("admin") ? "admin" :
-                              roles.contains("user") ? "user" : "none";
-
-                return Map.of(
-                    "id",                user.getId(),
-                    "email",             user.getEmail() != null ? user.getEmail() : "",
-                    "firstName",         user.getFirstName() != null ? user.getFirstName() : "",
-                    "lastName",          user.getLastName()  != null ? user.getLastName()  : "",
-                    "fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
-                                        (user.getLastName()  != null ? user.getLastName()  : "")).trim(),
-                    "role",              role,
-                    "emailVerified",     String.valueOf(user.isEmailVerified()),
-                    "membershipService", getAttr(user, "membershipService")
-                );
-            })
             .collect(Collectors.toList());
     }
 
