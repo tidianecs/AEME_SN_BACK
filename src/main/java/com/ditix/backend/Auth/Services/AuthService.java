@@ -134,6 +134,11 @@ public class AuthService {
         result.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
         result.put("nombreSitesGeres",    getAttr(user, "nombreSitesGeres"));
         result.put("typeBatiment",        getAttr(user, "typeBatiment"));
+        result.put("ministere",           getAttr(user, "ministere"));
+        result.put("region",              getAttr(user, "region"));
+        result.put("zone",                getAttr(user, "zone"));
+        result.put("categorieZone",       getAttr(user, "categorieZone"));
+        result.put("categorie",           getAttr(user, "categorie"));
         return result;
     }
 
@@ -183,6 +188,11 @@ public class AuthService {
         profile.put("derniereMiseANiveau", getAttr(user, "derniereMiseANiveau"));
         profile.put("nombreSitesGeres",    getAttr(user, "nombreSitesGeres"));
         profile.put("typeBatiment",        getAttr(user, "typeBatiment"));
+        profile.put("ministere",           getAttr(user, "ministere"));
+        profile.put("region",              getAttr(user, "region"));
+        profile.put("zone",                getAttr(user, "zone"));
+        profile.put("categorieZone",       getAttr(user, "categorieZone"));
+        profile.put("categorie",           getAttr(user, "categorie"));
         return profile;
     }
 
@@ -200,7 +210,8 @@ public class AuthService {
             "genre", "dateNaissance", "contact1", "contact2", "emailSecondaire",
             "departement", "posteOccupe", "dateNomination",
             "cohorte", "dateInstallation", "dateFormation",
-            "derniereMiseANiveau", "nombreSitesGeres", "typeBatiment"
+            "derniereMiseANiveau", "nombreSitesGeres", "typeBatiment",
+            "ministere", "region", "zone", "categorieZone", "categorie"
         };
 
         for (String key : attrKeys) {
