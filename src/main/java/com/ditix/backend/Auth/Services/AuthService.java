@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -349,5 +350,38 @@ public class AuthService {
         if (user.getAttributes() == null) return "";
         List<String> vals = user.getAttributes().get(key);
         return (vals != null && !vals.isEmpty()) ? vals.get(0) : "";
+    }
+
+    public List<Map<String, Object>> getStatsByRegion() {
+        List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, Integer.MAX_VALUE);
+
+        // Groupe par région
+        Map<String, List<UserRepresentation>> byRegion = allUsers.stream()
+            .filter(u -> !getAttr(u, "region").isBlank())
+            .collect(Collectors.groupingBy(u -> getAttr(u, "region")));
+
+        return byRegion.entrySet().stream()
+            .map(entry -> {
+                String region = entry.getKey();
+                List<UserRepresentation> users = entry.getValue();
+
+                // Nombre de gestionnaires
+                long gestionnaires = users.size();
+
+                // Nombre de structures uniques
+                long structures = users.stream()
+                    .map(u -> getAttr(u, "membershipService"))
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .count();
+
+                Map<String, Object> stat = new HashMap<>();
+                stat.put("region",        region);
+                stat.put("gestionnaires", gestionnaires);
+                stat.put("structures",    structures);
+                return stat;
+            })
+            .sorted(Comparator.comparing(m -> (String) m.get("region")))
+            .collect(Collectors.toList());
     }
 }

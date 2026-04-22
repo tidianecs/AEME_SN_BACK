@@ -95,4 +95,9 @@ public class AdminController {
         authService.deleteUser(userId);
         return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
     }
+
+    @GetMapping("/stats/regions")
+    public ResponseEntity<List<Map<String, Object>>> getStatsByRegion() {
+        return ResponseEntity.ok(authService.getStatsByRegion());
+    }
 }
