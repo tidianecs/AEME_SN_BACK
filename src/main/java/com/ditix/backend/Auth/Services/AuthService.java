@@ -236,8 +236,6 @@ public class AuthService {
 
         Map<String, List<String>> attributes = user.getAttributes();
         if (attributes == null) attributes = new HashMap<>();
-
-        // On crée une référence finale pour le lambda
         final Map<String, List<String>> finalAttributes = attributes;
 
         String[] attrKeys = {
@@ -322,31 +320,19 @@ public class AuthService {
             total = keycloak.realm(realm).users().count();
         }
 
+        // Pas d'appel Keycloak pour les rôles — trop coûteux
         List<Map<String, String>> result = users.stream()
-            .map(user -> {
-                List<String> roles = keycloak.realm(realm).users()
-                        .get(user.getId())
-                        .roles().realmLevel().listEffective()
-                        .stream()
-                        .map(RoleRepresentation::getName)
-                        .filter(r -> r.equals("user") || r.equals("admin"))
-                        .collect(Collectors.toList());
-
-                String role = roles.contains("admin") ? "admin" :
-                              roles.contains("user") ? "user" : "none";
-
-                return Map.of(
-                    "id",                user.getId(),
-                    "email",             user.getEmail() != null ? user.getEmail() : "",
-                    "firstName",         user.getFirstName() != null ? user.getFirstName() : "",
-                    "lastName",          user.getLastName()  != null ? user.getLastName()  : "",
-                    "fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
-                                         (user.getLastName()  != null ? user.getLastName()  : "")).trim(),
-                    "role",              role,
-                    "emailVerified",     String.valueOf(user.isEmailVerified()),
-                    "membershipService", getAttr(user, "membershipService")
-                );
-            })
+            .map(user -> Map.of(
+                "id",                user.getId(),
+                "email",             user.getEmail() != null ? user.getEmail() : "",
+                "firstName",         user.getFirstName() != null ? user.getFirstName() : "",
+                "lastName",          user.getLastName()  != null ? user.getLastName()  : "",
+                "fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                                     (user.getLastName()  != null ? user.getLastName()  : "")).trim(),
+                "role",              "user",
+                "emailVerified",     String.valueOf(user.isEmailVerified()),
+                "membershipService", getAttr(user, "membershipService")
+            ))
             .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -358,6 +344,11 @@ public class AuthService {
     }
 
     public List<Map<String, Object>> getAllUsersWithLocation() {
+        // 1 seule requête DB pour toutes les structures
+        Map<Long, Structure> structureCache = structureRepository.findAll()
+            .stream()
+            .collect(Collectors.toMap(Structure::getId, s -> s));
+
         return keycloak.realm(realm).users().list(0, 10000).stream()
             .filter(user -> !getAttr(user, "structureId").isBlank()
                          && !getAttr(user, "membershipService").isBlank())
@@ -368,10 +359,10 @@ public class AuthService {
 
                 try {
                     Long id = Long.parseLong(structureId);
-                    Optional<Structure> s = structureRepository.findById(id);
-                    if (s.isPresent()) {
-                        lat = s.get().getLatitude()  != null ? s.get().getLatitude()  : "";
-                        lon = s.get().getLongitude() != null ? s.get().getLongitude() : "";
+                    Structure s = structureCache.get(id);
+                    if (s != null) {
+                        lat = s.getLatitude()  != null ? s.getLatitude()  : "";
+                        lon = s.getLongitude() != null ? s.getLongitude() : "";
                     }
                 } catch (NumberFormatException ignored) {}
 
@@ -394,31 +385,38 @@ public class AuthService {
     }
 
     public List<Map<String, Object>> getStatsByRegion() {
-        List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, 10000);
+        // 1 seule requête DB pour les structures
+        Map<String, Long> structuresByRegion = structureRepository.findAll()
+            .stream()
+            .filter(s -> s.getRegion() != null && !s.getRegion().isBlank())
+            .collect(Collectors.groupingBy(
+                Structure::getRegion,
+                Collectors.counting()
+            ));
 
-        Map<String, List<UserRepresentation>> byRegion = allUsers.stream()
+        // Keycloak avec limite raisonnable
+        List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, 500);
+
+        Map<String, Long> usersByRegion = allUsers.stream()
             .filter(u -> !getAttr(u, "region").isBlank())
-            .collect(Collectors.groupingBy(u -> getAttr(u, "region")));
+            .collect(Collectors.groupingBy(
+                u -> getAttr(u, "region"),
+                Collectors.counting()
+            ));
 
-        return byRegion.entrySet().stream()
-            .map(entry -> {
-                String region = entry.getKey();
-                List<UserRepresentation> users = entry.getValue();
+        Set<String> allRegions = new HashSet<>();
+        allRegions.addAll(structuresByRegion.keySet());
+        allRegions.addAll(usersByRegion.keySet());
 
-                long gestionnaires = users.size();
-                long structures = users.stream()
-                    .map(u -> getAttr(u, "membershipService"))
-                    .filter(s -> !s.isBlank())
-                    .distinct()
-                    .count();
-
+        return allRegions.stream()
+            .sorted()
+            .map(region -> {
                 Map<String, Object> stat = new HashMap<>();
                 stat.put("region",        region);
-                stat.put("gestionnaires", gestionnaires);
-                stat.put("structures",    structures);
+                stat.put("gestionnaires", usersByRegion.getOrDefault(region, 0L));
+                stat.put("structures",    structuresByRegion.getOrDefault(region, 0L));
                 return stat;
             })
-            .sorted(Comparator.comparing(m -> (String) m.get("region")))
             .collect(Collectors.toList());
     }
 
