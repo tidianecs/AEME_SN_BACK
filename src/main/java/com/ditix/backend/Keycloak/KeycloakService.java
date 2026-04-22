@@ -5,6 +5,9 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.web.context.WebApplicationContext;
 
 @Configuration
 public class KeycloakService {
@@ -22,6 +25,7 @@ public class KeycloakService {
     private String realm;
 
     @Bean
+    @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public Keycloak keycloakAdminClient() {
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl)

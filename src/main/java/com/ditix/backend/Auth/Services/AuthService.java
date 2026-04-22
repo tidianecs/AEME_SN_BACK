@@ -320,7 +320,6 @@ public class AuthService {
             total = keycloak.realm(realm).users().count();
         }
 
-        // Pas d'appel Keycloak pour les rôles — trop coûteux
         List<Map<String, String>> result = users.stream()
             .map(user -> Map.of(
                 "id",                user.getId(),
@@ -344,7 +343,6 @@ public class AuthService {
     }
 
     public List<Map<String, Object>> getAllUsersWithLocation() {
-        // 1 seule requête DB pour toutes les structures
         Map<Long, Structure> structureCache = structureRepository.findAll()
             .stream()
             .collect(Collectors.toMap(Structure::getId, s -> s));
@@ -385,7 +383,6 @@ public class AuthService {
     }
 
     public List<Map<String, Object>> getStatsByRegion() {
-        // 1 seule requête DB pour les structures
         Map<String, Long> structuresByRegion = structureRepository.findAll()
             .stream()
             .filter(s -> s.getRegion() != null && !s.getRegion().isBlank())
@@ -394,7 +391,6 @@ public class AuthService {
                 Collectors.counting()
             ));
 
-        // Keycloak avec limite raisonnable
         List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, 500);
 
         Map<String, Long> usersByRegion = allUsers.stream()
