@@ -353,9 +353,9 @@ public class AuthService {
     }
 
     public List<Map<String, Object>> getStatsByRegion() {
-        List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, Integer.MAX_VALUE);
+        // Keycloak ne supporte pas Integer.MAX_VALUE — utilise 10000
+        List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, 10000);
 
-        // Groupe par région
         Map<String, List<UserRepresentation>> byRegion = allUsers.stream()
             .filter(u -> !getAttr(u, "region").isBlank())
             .collect(Collectors.groupingBy(u -> getAttr(u, "region")));
@@ -365,10 +365,7 @@ public class AuthService {
                 String region = entry.getKey();
                 List<UserRepresentation> users = entry.getValue();
 
-                // Nombre de gestionnaires
                 long gestionnaires = users.size();
-
-                // Nombre de structures uniques
                 long structures = users.stream()
                     .map(u -> getAttr(u, "membershipService"))
                     .filter(s -> !s.isBlank())
