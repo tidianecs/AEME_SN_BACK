@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 // Routes admin uniquement
                 .requestMatchers(HttpMethod.POST,   "/api/v1/structures/**").permitAll()
+                .requestMatchers(HttpMethod.GET,    "/api/v1/structures/**").permitAll()
                 .requestMatchers(HttpMethod.PATCH,  "/api/v1/structures/**").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/structures/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("admin")
