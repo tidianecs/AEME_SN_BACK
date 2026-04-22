@@ -22,6 +22,11 @@ public class AuthController {
         this.reportService = reportService;
     }
 
+    @GetMapping("/stats/regions")
+    public ResponseEntity<List<Map<String, Object>>> getStatsByRegion() {
+        return ResponseEntity.ok(authService.getStatsByRegion());
+    }
+
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> me(JwtAuthenticationToken authentication) {
         Jwt jwt = authentication.getToken();
