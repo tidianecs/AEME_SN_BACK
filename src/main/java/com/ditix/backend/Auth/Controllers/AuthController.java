@@ -74,6 +74,21 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Position mise à jour"));
     }
 
+    @PatchMapping("/me/membership")
+    public ResponseEntity<Map<String, String>> updateMyMembership(
+            JwtAuthenticationToken authentication,
+            @RequestBody Map<String, String> body
+    ) {
+        String userId          = authentication.getToken().getSubject();
+        String membershipService = body.get("membershipService");
+        if (membershipService == null || membershipService.isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "membershipService requis"));
+        }
+        authService.updateMyMembership(userId, membershipService);
+        return ResponseEntity.ok(Map.of("message", "Membership mis à jour"));
+    }
+
     @GetMapping("/users/locations")
     public ResponseEntity<List<Map<String, Object>>> getAllUsersWithLocation() {
         return ResponseEntity.ok(authService.getAllUsersWithLocation());
@@ -83,11 +98,6 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> getUserById(@PathVariable String userId) {
         return ResponseEntity.ok(authService.getUserById(userId));
     }
-
-    // @GetMapping("/test-sentry")
-    // public ResponseEntity<String> testSentry() {
-    //     throw new RuntimeException("Test Sentry AEME — ceci est une erreur de test");
-    // }
 
     @GetMapping("/geocode/search")
     public ResponseEntity<String> geocodeSearch(

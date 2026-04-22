@@ -33,9 +33,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/register").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 // Routes admin uniquement
-                .requestMatchers(HttpMethod.POST,   "/api/v1/structures/**").hasRole("admin")
-                .requestMatchers(HttpMethod.PATCH,  "/api/v1/structures/**").hasRole("admin")
-                .requestMatchers(HttpMethod.DELETE, "/api/v1/structures/**").hasRole("admin")
+                .requestMatchers(HttpMethod.POST,   "/api/v1/structures/**").permitAll()
+                .requestMatchers(HttpMethod.PATCH,  "/api/v1/structures/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/structures/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("admin")
                 // Tout le reste nécessite un token
                 .anyRequest().authenticated()

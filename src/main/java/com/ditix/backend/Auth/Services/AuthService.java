@@ -1,6 +1,8 @@
 package com.ditix.backend.Auth.Services;
 
 import com.ditix.backend.Core.EmailService;
+import com.ditix.backend.Structure.Model.Structure;
+import com.ditix.backend.Structure.Repository.StructureRepository;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -11,12 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +21,7 @@ public class AuthService {
 
     private final Keycloak keycloak;
     private final EmailService emailService;
+    private final StructureRepository structureRepository;
 
     @Value("${keycloak.admin.realm}")
     private String realm;
@@ -34,9 +32,10 @@ public class AuthService {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
-    public AuthService(Keycloak keycloak, EmailService emailService) {
+    public AuthService(Keycloak keycloak, EmailService emailService, StructureRepository structureRepository) {
         this.keycloak = keycloak;
         this.emailService = emailService;
+        this.structureRepository = structureRepository;
     }
 
     public void inviteUser(String email, String firstName, String lastName, String role, String membershipService) {
@@ -104,6 +103,31 @@ public class AuthService {
         return sb.toString();
     }
 
+    private Map<String, String> resolveStructure(UserRepresentation user) {
+        Map<String, String> result = new HashMap<>();
+        String structureId       = getAttr(user, "structureId");
+        String membershipService = getAttr(user, "membershipService");
+
+        result.put("structureId",       structureId);
+        result.put("membershipService", membershipService);
+        result.put("serviceLatitude",   "");
+        result.put("serviceLongitude",  "");
+
+        if (!structureId.isBlank()) {
+            try {
+                Long id = Long.parseLong(structureId);
+                structureRepository.findById(id).ifPresent(s -> {
+                    result.put("serviceLatitude",  s.getLatitude()  != null ? s.getLatitude()  : "");
+                    result.put("serviceLongitude", s.getLongitude() != null ? s.getLongitude() : "");
+                    if (membershipService.isBlank()) {
+                        result.put("membershipService", s.getName());
+                    }
+                });
+            } catch (NumberFormatException ignored) {}
+        }
+        return result;
+    }
+
     public Map<String, Object> getUserById(String userId) {
         UserRepresentation user = keycloak
             .realm(realm)
@@ -113,6 +137,7 @@ public class AuthService {
 
         String firstName = user.getFirstName() != null ? user.getFirstName() : "";
         String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
+        Map<String, String> structure = resolveStructure(user);
 
         Map<String, Object> result = new HashMap<>();
         result.put("id",                  user.getId());
@@ -120,7 +145,10 @@ public class AuthService {
         result.put("firstName",           firstName);
         result.put("lastName",            lastName);
         result.put("fullName",            (firstName + " " + lastName).trim());
-        result.put("membershipService",   getAttr(user, "membershipService"));
+        result.put("structureId",         structure.get("structureId"));
+        result.put("membershipService",   structure.get("membershipService"));
+        result.put("serviceLatitude",     structure.get("serviceLatitude"));
+        result.put("serviceLongitude",    structure.get("serviceLongitude"));
         result.put("genre",               getAttr(user, "genre"));
         result.put("dateNaissance",       getAttr(user, "dateNaissance"));
         result.put("contact1",            getAttr(user, "contact1"));
@@ -152,6 +180,7 @@ public class AuthService {
 
         String firstName = user.getFirstName() != null ? user.getFirstName() : "";
         String lastName  = user.getLastName()  != null ? user.getLastName()  : "";
+        Map<String, String> structure = resolveStructure(user);
 
         List<String> roles = keycloak.realm(realm).users()
                 .get(userId)
@@ -170,11 +199,12 @@ public class AuthService {
         profile.put("firstName",           firstName);
         profile.put("lastName",            lastName);
         profile.put("fullName",            (firstName + " " + lastName).trim());
-        profile.put("membershipService",   getAttr(user, "membershipService"));
+        profile.put("structureId",         structure.get("structureId"));
+        profile.put("membershipService",   structure.get("membershipService"));
+        profile.put("serviceLatitude",     structure.get("serviceLatitude"));
+        profile.put("serviceLongitude",    structure.get("serviceLongitude"));
         profile.put("role",                role);
         profile.put("score",               score);
-        profile.put("serviceLatitude",     getAttr(user, "serviceLatitude"));
-        profile.put("serviceLongitude",    getAttr(user, "serviceLongitude"));
         profile.put("genre",               getAttr(user, "genre"));
         profile.put("dateNaissance",       getAttr(user, "dateNaissance"));
         profile.put("contact1",            getAttr(user, "contact1"));
@@ -207,6 +237,9 @@ public class AuthService {
         Map<String, List<String>> attributes = user.getAttributes();
         if (attributes == null) attributes = new HashMap<>();
 
+        // On crée une référence finale pour le lambda
+        final Map<String, List<String>> finalAttributes = attributes;
+
         String[] attrKeys = {
             "genre", "dateNaissance", "contact1", "contact2", "emailSecondaire",
             "departement", "posteOccupe", "dateNomination",
@@ -217,8 +250,20 @@ public class AuthService {
 
         for (String key : attrKeys) {
             if (fields.containsKey(key) && fields.get(key) != null) {
-                attributes.put(key, Collections.singletonList(fields.get(key)));
+                finalAttributes.put(key, Collections.singletonList(fields.get(key)));
             }
+        }
+
+        if (fields.containsKey("structureId") && fields.get("structureId") != null) {
+            String structureId = fields.get("structureId");
+            finalAttributes.put("structureId", Collections.singletonList(structureId));
+            try {
+                Long id = Long.parseLong(structureId);
+                structureRepository.findById(id).ifPresent(s ->
+                    finalAttributes.put("membershipService",
+                        Collections.singletonList(s.getName()))
+                );
+            } catch (NumberFormatException ignored) {}
         }
 
         if (fields.containsKey("firstName") && fields.get("firstName") != null) {
@@ -228,7 +273,7 @@ public class AuthService {
             user.setLastName(fields.get("lastName"));
         }
 
-        user.setAttributes(attributes);
+        user.setAttributes(finalAttributes);
         keycloak.realm(realm).users().get(userId).update(user);
     }
 
@@ -313,47 +358,42 @@ public class AuthService {
     }
 
     public List<Map<String, Object>> getAllUsersWithLocation() {
-        return keycloak.realm(realm).users().list().stream()
-            .filter(user -> user.isEmailVerified())
+        return keycloak.realm(realm).users().list(0, 10000).stream()
+            .filter(user -> !getAttr(user, "structureId").isBlank()
+                         && !getAttr(user, "membershipService").isBlank())
             .map(user -> {
-                List<String> roles = keycloak.realm(realm).users()
-                        .get(user.getId())
-                        .roles().realmLevel().listEffective()
-                        .stream()
-                        .map(RoleRepresentation::getName)
-                        .filter(r -> r.equals("user") || r.equals("admin"))
-                        .collect(Collectors.toList());
+                String structureId = getAttr(user, "structureId");
+                String lat = "";
+                String lon = "";
 
-                String role = roles.contains("admin") ? "admin" :
-                              roles.contains("user") ? "user" : "none";
+                try {
+                    Long id = Long.parseLong(structureId);
+                    Optional<Structure> s = structureRepository.findById(id);
+                    if (s.isPresent()) {
+                        lat = s.get().getLatitude()  != null ? s.get().getLatitude()  : "";
+                        lon = s.get().getLongitude() != null ? s.get().getLongitude() : "";
+                    }
+                } catch (NumberFormatException ignored) {}
+
+                if (lat.isBlank() || lon.isBlank()) return null;
 
                 Map<String, Object> u = new HashMap<>();
                 u.put("id",                user.getId());
                 u.put("fullName",          ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
                                            (user.getLastName()  != null ? user.getLastName()  : "")).trim());
                 u.put("email",             user.getEmail() != null ? user.getEmail() : "");
-                u.put("role",              role);
+                u.put("role",              "user");
                 u.put("membershipService", getAttr(user, "membershipService"));
-                u.put("serviceLatitude",   getAttr(user, "serviceLatitude"));
-                u.put("serviceLongitude",  getAttr(user, "serviceLongitude"));
+                u.put("structureId",       structureId);
+                u.put("serviceLatitude",   lat);
+                u.put("serviceLongitude",  lon);
                 return u;
             })
-            .filter(u -> !((String) u.get("membershipService")).isBlank())
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 
-    public void deleteUser(String userId) {
-        keycloak.realm(realm).users().get(userId).remove();
-    }
-
-    private String getAttr(UserRepresentation user, String key) {
-        if (user.getAttributes() == null) return "";
-        List<String> vals = user.getAttributes().get(key);
-        return (vals != null && !vals.isEmpty()) ? vals.get(0) : "";
-    }
-
     public List<Map<String, Object>> getStatsByRegion() {
-        // Keycloak ne supporte pas Integer.MAX_VALUE — utilise 10000
         List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, 10000);
 
         Map<String, List<UserRepresentation>> byRegion = allUsers.stream()
@@ -380,5 +420,15 @@ public class AuthService {
             })
             .sorted(Comparator.comparing(m -> (String) m.get("region")))
             .collect(Collectors.toList());
+    }
+
+    public void deleteUser(String userId) {
+        keycloak.realm(realm).users().get(userId).remove();
+    }
+
+    private String getAttr(UserRepresentation user, String key) {
+        if (user.getAttributes() == null) return "";
+        List<String> vals = user.getAttributes().get(key);
+        return (vals != null && !vals.isEmpty()) ? vals.get(0) : "";
     }
 }
