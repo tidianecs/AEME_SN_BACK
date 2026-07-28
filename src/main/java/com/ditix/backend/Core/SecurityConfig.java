@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/structures", "/api/v1/structures/**").hasRole("admin")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/structures", "/api/v1/structures/**").hasRole("admin")
                 .requestMatchers("/api/v1/admin/**").hasRole("admin")
+                .requestMatchers(HttpMethod.GET, "/api/v1/reports/all").hasRole("admin")
                 // Tout le reste nécessite un token
                 .anyRequest().authenticated()
             )
