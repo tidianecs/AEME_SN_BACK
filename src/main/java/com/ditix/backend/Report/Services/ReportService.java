@@ -17,8 +17,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
 @Service
 public class ReportService {
 
@@ -135,9 +135,20 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    public ReportResponseDTO getReportById(Long id) {
-        Report report = reportRepository.findById(id)
+    private Report getAccessibleReport(Long reportId, String requesterUserId, boolean admin) {
+        Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+        if (admin) {
+            return report;
+        }
+        if (Objects.equals(report.getCreatedByUserId(), requesterUserId)) {
+            return report;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à ce rapport");
+    }
+
+    public ReportResponseDTO getReportById(Long id, String requesterUserId, boolean admin) {
+        Report report = getAccessibleReport(id, requesterUserId, admin);
         return new ReportResponseDTO(report);
     }
 
@@ -177,9 +188,8 @@ public class ReportService {
         return (int) (approved * 4 - rejected * 5);
     }
 
-    public Report getRawReport(Long id) {
-        return reportRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+    public Report getRawReport(Long id, String requesterUserId, boolean admin) {
+        return getAccessibleReport(id, requesterUserId, admin);
     }
 
     public List<ReportResponseDTO> getReportsByUserId(String userId) {

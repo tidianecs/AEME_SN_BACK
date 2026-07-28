@@ -98,8 +98,14 @@ public class ReportController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReportResponseDTO> getReportById(@PathVariable Long id) {
-        return ResponseEntity.ok(reportService.getReportById(id));
+    public ResponseEntity<ReportResponseDTO> getReportById(
+            @PathVariable Long id,
+            JwtAuthenticationToken authentication
+    ) {
+        String requesterUserId = authentication.getToken().getSubject();
+        boolean admin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_admin".equals(authority.getAuthority()));
+        return ResponseEntity.ok(reportService.getReportById(id, requesterUserId, admin));
     }
 
     @DeleteMapping("/{id}")
@@ -115,9 +121,13 @@ public class ReportController {
     @GetMapping("/{id}/download/{fileType}")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable Long id,
-            @PathVariable String fileType
+            @PathVariable String fileType,
+            JwtAuthenticationToken authentication
     ) throws IOException {
-        Report report = reportService.getRawReport(id);
+        String requesterUserId = authentication.getToken().getSubject();
+        boolean admin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_admin".equals(authority.getAuthority()));
+        Report report = reportService.getRawReport(id, requesterUserId, admin);
 
         String filePath = switch (fileType) {
             case "illustrations"              -> report.getIllustrationsPath();
