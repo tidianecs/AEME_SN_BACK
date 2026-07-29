@@ -14,9 +14,11 @@ import java.util.Map;
 public class ChatRESTController {
 
     private final ChatService chatService;
+    private final com.ditix.backend.Auth.Services.AuthService authService;
 
-    public ChatRESTController(ChatService chatService) {
+    public ChatRESTController(ChatService chatService, com.ditix.backend.Auth.Services.AuthService authService) {
         this.chatService = chatService;
+        this.authService = authService;
     }
 
     // Créer ou récupérer une conversation avec un autre user
@@ -57,5 +59,32 @@ public class ChatRESTController {
         String userId = authentication.getToken().getSubject();
         chatService.deleteConversation(id, userId);
         return ResponseEntity.ok(Map.of("message", "Conversation supprimée"));
+    }
+
+    @GetMapping("/conversations/{conversationId}/counterpart")
+    public ResponseEntity<com.ditix.backend.Chat.DTO.ConversationCounterpartDTO> getCounterpart(
+            @PathVariable Long conversationId,
+            JwtAuthenticationToken authentication
+    ) {
+        if (authentication == null || authentication.getToken() == null || authentication.getToken().getSubject() == null || authentication.getToken().getSubject().trim().isEmpty()) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+
+        String requesterUserId = authentication.getToken().getSubject();
+        String counterpartId = chatService.getCounterpartUserId(conversationId, requesterUserId);
+
+        try {
+            Map<String, Object> userMap = authService.getUserById(counterpartId);
+            String fullName = (String) userMap.get("fullName");
+            if (fullName == null || fullName.trim().isEmpty()) {
+                fullName = "Utilisateur indisponible";
+            }
+            return ResponseEntity.ok(new com.ditix.backend.Chat.DTO.ConversationCounterpartDTO(counterpartId, fullName));
+        } catch (Exception e) {
+            if (e.getClass().getName().contains("NotFoundException")) {
+                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Utilisateur supprimé");
+            }
+            throw e;
+        }
     }
 }

@@ -84,4 +84,64 @@ public class ChatServiceAccessTest {
 
         assertFalse(chatService.canAccessConversation(1L, "user1"));
     }
+
+    @Test
+    void getCounterpartUserId_userOne_shouldReturnUserTwo() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+
+        assertEquals("user2", chatService.getCounterpartUserId(1L, "user1"));
+    }
+
+    @Test
+    void getCounterpartUserId_userTwo_shouldReturnUserOne() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+
+        assertEquals("user1", chatService.getCounterpartUserId(1L, "user2"));
+    }
+
+    @Test
+    void getCounterpartUserId_nonParticipant_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(1L, "user3"));
+    }
+
+    @Test
+    void getCounterpartUserId_missingConversation_shouldThrow403() {
+        when(conversationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(1L, "user1"));
+    }
+
+    @Test
+    void getCounterpartUserId_nullConversationId_shouldThrow403() {
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(null, "user1"));
+    }
+
+    @Test
+    void getCounterpartUserId_nullRequester_shouldThrow403() {
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(1L, null));
+    }
+
+    @Test
+    void getCounterpartUserId_blankRequester_shouldThrow403() {
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(1L, "   "));
+    }
+
+    @Test
+    void getCounterpartUserId_blankCounterpart_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "   ");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(1L, "user1"));
+    }
 }
