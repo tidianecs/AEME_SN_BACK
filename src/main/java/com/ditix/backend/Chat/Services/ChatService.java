@@ -34,6 +34,31 @@ public class ChatService {
                 .orElse(false);
     }
 
+    public String getCounterpartUserId(Long conversationId, String requesterUserId) {
+        if (conversationId == null || requesterUserId == null || requesterUserId.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        }
+
+        Conversation conv = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
+
+        if (java.util.Objects.equals(requesterUserId, conv.getUserOneId())) {
+            String counterpart = conv.getUserTwoId();
+            if (counterpart == null || counterpart.trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+            }
+            return counterpart;
+        } else if (java.util.Objects.equals(requesterUserId, conv.getUserTwoId())) {
+            String counterpart = conv.getUserOneId();
+            if (counterpart == null || counterpart.trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+            }
+            return counterpart;
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        }
+    }
+
     // Crée ou récupère une conversation entre deux users
     public Conversation getOrCreateConversation(String userOneId, String userTwoId) {
         return conversationRepository
