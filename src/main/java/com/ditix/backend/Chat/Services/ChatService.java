@@ -24,6 +24,16 @@ public class ChatService {
         this.messageRepository = messageRepository;
     }
 
+    public boolean canAccessConversation(Long conversationId, String userId) {
+        if (conversationId == null || userId == null || userId.trim().isEmpty()) {
+            return false;
+        }
+        return conversationRepository.findById(conversationId)
+                .map(conv -> java.util.Objects.equals(userId, conv.getUserOneId()) ||
+                             java.util.Objects.equals(userId, conv.getUserTwoId()))
+                .orElse(false);
+    }
+
     // Crée ou récupère une conversation entre deux users
     public Conversation getOrCreateConversation(String userOneId, String userTwoId) {
         return conversationRepository

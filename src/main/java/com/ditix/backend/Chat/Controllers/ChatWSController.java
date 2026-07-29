@@ -26,22 +26,38 @@ public class ChatWSController {
     public void sendMessage(@Payload SendMessageRequest request,
                             Principal principal) {
         if (principal == null) {
-            throw new RuntimeException("Non authentifié");
+            throw new org.springframework.security.access.AccessDeniedException("Non authentifié");
         }
 
-        // Récupère l'ID du user depuis le JWT
+        if (!(principal instanceof JwtAuthenticationToken)) {
+            throw new org.springframework.security.access.AccessDeniedException("Type d'authentification invalide");
+        }
+
         JwtAuthenticationToken auth = (JwtAuthenticationToken) principal;
-        String senderId = auth.getToken().getSubject();
+        String requesterUserId = auth.getToken().getSubject();
+
+        if (requesterUserId == null || requesterUserId.trim().isEmpty()) {
+            throw new org.springframework.security.access.AccessDeniedException("ID utilisateur manquant");
+        }
+
+        Long conversationId = request.getConversationId();
+        if (conversationId == null) {
+            throw new org.springframework.security.access.AccessDeniedException("ID de conversation manquant");
+        }
+
+        if (!chatService.canAccessConversation(conversationId, requesterUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé à cette conversation");
+        }
 
         // Persiste et broadcast le message
         MessageDTO saved = chatService.saveMessage(
-            request.getConversationId(),
-            senderId,
+            conversationId,
+            requesterUserId,
             request.getContent()
         );
 
         messagingTemplate.convertAndSend(
-            "/topic/conversation." + request.getConversationId(),
+            "/topic/conversation." + conversationId,
             saved
         );
     }
