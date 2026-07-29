@@ -95,7 +95,31 @@ public class AuthController {
     }
 
     @GetMapping("/auth/users/{userId}")
-    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> getUserById(
+            @PathVariable String userId,
+            JwtAuthenticationToken authentication
+    ) {
+        if (authentication == null || authentication.getToken() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, "Accès refusé à ce profil"
+            );
+        }
+        String requesterUserId = authentication.getToken().getSubject();
+        if (requesterUserId == null || requesterUserId.trim().isEmpty()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, "Accès refusé à ce profil"
+            );
+        }
+
+        boolean admin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_admin".equals(authority.getAuthority()));
+
+        if (!admin && !java.util.Objects.equals(userId, requesterUserId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, "Accès refusé à ce profil"
+            );
+        }
+
         return ResponseEntity.ok(authService.getUserById(userId));
     }
 
