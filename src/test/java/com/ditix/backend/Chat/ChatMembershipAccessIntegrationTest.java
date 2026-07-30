@@ -29,12 +29,14 @@ public class ChatMembershipAccessIntegrationTest {
     private ConversationMemberRepository conversationMemberRepository;
 
     private Conversation createConversation(ConversationType type, boolean active) {
-        Conversation c = new Conversation();
-        c.setType(type);
-        c.setActive(active);
-        c.setUserOneId("dummy1");
-        c.setUserTwoId("dummy2");
-        return conversationRepository.save(c);
+        Conversation conv = new Conversation();
+        conv.setType(type);
+        if (type == ConversationType.DIRECT) {
+            conv.setUserOneId("dummy1");
+            conv.setUserTwoId("dummy2");
+        }
+        conv.setActive(active);
+        return conversationRepository.save(conv);
     }
 
     private ConversationMember createMember(Long conversationId, String userId, boolean active) {
