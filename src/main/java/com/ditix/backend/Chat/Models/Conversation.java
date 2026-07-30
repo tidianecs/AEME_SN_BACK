@@ -11,10 +11,10 @@ public class Conversation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_one_id", length = 255)
     private String userOneId;
 
-    @Column(nullable = false)
+    @Column(name = "user_two_id", length = 255)
     private String userTwoId;
 
     private LocalDateTime createdAt;
