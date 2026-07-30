@@ -23,4 +23,16 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     @Modifying
     @Query(nativeQuery = true, value = "INSERT INTO public.conversation_members (conversation_id, user_id, role, active, joined_at) VALUES (:conversationId, :userId, 'MEMBER', TRUE, CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING")
     int insertActiveMemberIfAbsent(@Param("conversationId") Long conversationId, @Param("userId") String userId);
+
+    @Modifying
+    @Query(nativeQuery = true, value = "INSERT INTO public.conversation_members (conversation_id, user_id, role, active, joined_at, left_at) VALUES (:conversationId, :userId, 'MEMBER', TRUE, CURRENT_TIMESTAMP, NULL) ON CONFLICT DO NOTHING")
+    int insertSyncMemberIfAbsent(@Param("conversationId") Long conversationId, @Param("userId") String userId);
+
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE public.conversation_members SET active = false, left_at = CURRENT_TIMESTAMP WHERE conversation_id = :conversationId AND active = true AND user_id NOT IN :desiredUserIds")
+    int deactivateMembersNotInList(@Param("conversationId") Long conversationId, @Param("desiredUserIds") List<String> desiredUserIds);
+
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE public.conversation_members SET active = false, left_at = CURRENT_TIMESTAMP WHERE conversation_id = :conversationId AND active = true")
+    int deactivateAllMembers(@Param("conversationId") Long conversationId);
 }
