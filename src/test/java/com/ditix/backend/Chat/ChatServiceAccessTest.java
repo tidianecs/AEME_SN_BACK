@@ -25,6 +25,9 @@ public class ChatServiceAccessTest {
     @Mock
     private ConversationMemberRepository conversationMemberRepository;
 
+    @Mock
+    private com.ditix.backend.Chat.Repository.MessageRepository messageRepository;
+
     @InjectMocks
     private ChatService chatService;
 
@@ -33,31 +36,36 @@ public class ChatServiceAccessTest {
         conv.setId(id);
         conv.setUserOneId(userOneId);
         conv.setUserTwoId(userTwoId);
+        conv.setActive(true);
+        conv.setType(ConversationType.DIRECT);
         return conv;
     }
 
     @Test
-    void canAccessConversation_userOne_shouldReturnTrue() {
+    void canAccessConversation_activeMember_shouldReturnTrue() {
         Conversation conv = createMockConversation(1L, "user1", "user2");
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
 
         assertTrue(chatService.canAccessConversation(1L, "user1"));
     }
 
     @Test
-    void canAccessConversation_userTwo_shouldReturnTrue() {
+    void canAccessConversation_inactiveMember_shouldReturnFalse() {
         Conversation conv = createMockConversation(1L, "user1", "user2");
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(false);
 
-        assertTrue(chatService.canAccessConversation(1L, "user2"));
+        assertFalse(chatService.canAccessConversation(1L, "user1"));
     }
 
     @Test
-    void canAccessConversation_nonParticipant_shouldReturnFalse() {
+    void canAccessConversation_inactiveConversation_shouldReturnFalse() {
         Conversation conv = createMockConversation(1L, "user1", "user2");
+        conv.setActive(false);
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
 
-        assertFalse(chatService.canAccessConversation(1L, "user3"));
+        assertFalse(chatService.canAccessConversation(1L, "user1"));
     }
 
     @Test
@@ -83,17 +91,10 @@ public class ChatServiceAccessTest {
     }
 
     @Test
-    void canAccessConversation_nullParticipantFields_shouldNotThrow() {
-        Conversation conv = createMockConversation(1L, null, null);
-        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
-
-        assertFalse(chatService.canAccessConversation(1L, "user1"));
-    }
-
-    @Test
     void getCounterpartUserId_userOne_shouldReturnUserTwo() {
         Conversation conv = createMockConversation(1L, "user1", "user2");
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
 
         assertEquals("user2", chatService.getCounterpartUserId(1L, "user1"));
     }
@@ -102,6 +103,7 @@ public class ChatServiceAccessTest {
     void getCounterpartUserId_userTwo_shouldReturnUserOne() {
         Conversation conv = createMockConversation(1L, "user1", "user2");
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user2")).thenReturn(true);
 
         assertEquals("user1", chatService.getCounterpartUserId(1L, "user2"));
     }
@@ -110,13 +112,14 @@ public class ChatServiceAccessTest {
     void getCounterpartUserId_nonParticipant_shouldThrow403() {
         Conversation conv = createMockConversation(1L, "user1", "user2");
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user3")).thenReturn(false);
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
             () -> chatService.getCounterpartUserId(1L, "user3"));
     }
 
     @Test
-    void getCounterpartUserId_missingConversation_shouldThrow403() {
+    void getCounterpartUserId_missingConversation_shouldThrow404() {
         when(conversationRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
@@ -145,6 +148,18 @@ public class ChatServiceAccessTest {
     void getCounterpartUserId_blankCounterpart_shouldThrow403() {
         Conversation conv = createMockConversation(1L, "user1", "   ");
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.getCounterpartUserId(1L, "user1"));
+    }
+
+    @Test
+    void getCounterpartUserId_nonDirect_shouldThrow400() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        conv.setType(ConversationType.GLOBAL);
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
             () -> chatService.getCounterpartUserId(1L, "user1"));
@@ -221,5 +236,94 @@ public class ChatServiceAccessTest {
 
         verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u1");
         verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u2");
+    }
+
+    @Test
+    void deleteConversation_directActiveMember_shouldDelete() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
+
+        assertDoesNotThrow(() -> chatService.deleteConversation(1L, "user1"));
+
+        verify(conversationRepository).delete(conv);
+    }
+
+    @Test
+    void deleteConversation_directNonMember_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user3")).thenReturn(false);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user3"));
+        verify(conversationRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteConversation_directInactiveMember_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(false);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user1"));
+        verify(conversationRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteConversation_inactiveConversation_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        conv.setActive(false);
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user1"));
+        verify(conversationRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteConversation_missingConversation_shouldThrow404() {
+        when(conversationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user1"));
+        verify(conversationRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteConversation_cohortActiveMember_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        conv.setType(ConversationType.COHORT);
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user1"));
+        verify(conversationRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteConversation_structureActiveMember_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        conv.setType(ConversationType.STRUCTURE);
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user1"));
+        verify(conversationRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteConversation_globalActiveMember_shouldThrow403() {
+        Conversation conv = createMockConversation(1L, "user1", "user2");
+        conv.setType(ConversationType.GLOBAL);
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
+        when(conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(1L, "user1")).thenReturn(true);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> chatService.deleteConversation(1L, "user1"));
+        verify(conversationRepository, never()).delete(any());
     }
 }

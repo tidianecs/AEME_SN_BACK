@@ -17,7 +17,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     Optional<Conversation> findBetweenUsers(String userOneId, String userTwoId);
 
     // Toutes les conversations d'un user
-    @Query("SELECT c FROM Conversation c WHERE " +
-           "c.userOneId = :userId OR c.userTwoId = :userId")
+    @Query("SELECT c FROM Conversation c JOIN ConversationMember cm ON c.id = cm.conversationId WHERE " +
+           "cm.userId = :userId AND cm.active = true AND c.active = true ORDER BY c.createdAt DESC")
     List<Conversation> findAllByUserId(String userId);
 }
