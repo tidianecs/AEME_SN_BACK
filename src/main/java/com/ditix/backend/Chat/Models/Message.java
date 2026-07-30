@@ -20,6 +20,9 @@ public class Message {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "sender_full_name", length = 255)
+    private String senderFullName;
+
     private LocalDateTime sentAt;
 
     @PrePersist
@@ -57,5 +60,12 @@ public class Message {
 
     public LocalDateTime getSentAt() { 
         return sentAt; 
+    }
+
+    public String getSenderFullName() {
+        return senderFullName;
+    }
+    public void setSenderFullName(String senderFullName) {
+        this.senderFullName = senderFullName;
     }
 }

@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.ditix.backend.Chat.Models.ConversationType;
+import com.ditix.backend.Chat.Repository.ConversationMemberRepository;
 
 import java.util.Optional;
 
@@ -19,6 +21,9 @@ public class ChatServiceAccessTest {
 
     @Mock
     private ConversationRepository conversationRepository;
+
+    @Mock
+    private ConversationMemberRepository conversationMemberRepository;
 
     @InjectMocks
     private ChatService chatService;
@@ -143,5 +148,78 @@ public class ChatServiceAccessTest {
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
             () -> chatService.getCounterpartUserId(1L, "user1"));
+    }
+
+    @Test
+    void getOrCreateConversation_newConversationDirect_shouldSaveAndEnsureMembers() {
+        when(conversationRepository.findBetweenUsers("u1", "u2")).thenReturn(Optional.empty());
+        Conversation savedConv = createMockConversation(10L, "u1", "u2");
+        when(conversationRepository.save(any(Conversation.class))).thenReturn(savedConv);
+
+        Conversation result = chatService.getOrCreateConversation("u1", "u2");
+
+        assertNotNull(result);
+        assertEquals(10L, result.getId());
+        verify(conversationRepository).save(any(Conversation.class));
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u1");
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u2");
+    }
+
+    @Test
+    void getOrCreateConversation_existingConversationDirect_shouldNotSaveButEnsureMembers() {
+        Conversation existing = createMockConversation(10L, "u1", "u2");
+        when(conversationRepository.findBetweenUsers("u1", "u2")).thenReturn(Optional.of(existing));
+
+        Conversation result = chatService.getOrCreateConversation("u1", "u2");
+
+        assertEquals(10L, result.getId());
+        verify(conversationRepository, never()).save(any(Conversation.class));
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u1");
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u2");
+    }
+
+    @Test
+    void getOrCreateConversation_selfConversation_shouldInsertOnlyOneMember() {
+        Conversation existing = createMockConversation(10L, "u1", "u1");
+        when(conversationRepository.findBetweenUsers("u1", "u1")).thenReturn(Optional.of(existing));
+
+        chatService.getOrCreateConversation("u1", "u1");
+
+        verify(conversationMemberRepository, times(1)).insertActiveMemberIfAbsent(10L, "u1");
+    }
+
+    @Test
+    void getOrCreateConversation_blankUserId_shouldNotInsertForThatId() {
+        Conversation existing = createMockConversation(10L, "u1", "  ");
+        when(conversationRepository.findBetweenUsers("u1", "  ")).thenReturn(Optional.of(existing));
+
+        chatService.getOrCreateConversation("u1", "  ");
+
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u1");
+        verify(conversationMemberRepository, never()).insertActiveMemberIfAbsent(10L, "  ");
+    }
+
+    @Test
+    void getOrCreateConversation_nonDirect_shouldNotInsertMembers() {
+        Conversation existing = createMockConversation(10L, "u1", "u2");
+        existing.setType(ConversationType.GLOBAL);
+        when(conversationRepository.findBetweenUsers("u1", "u2")).thenReturn(Optional.of(existing));
+
+        chatService.getOrCreateConversation("u1", "u2");
+
+        verify(conversationMemberRepository, never()).insertActiveMemberIfAbsent(any(), any());
+    }
+
+    @Test
+    void getOrCreateConversation_duplicateInsertion_shouldContinueNormally() {
+        Conversation existing = createMockConversation(10L, "u1", "u2");
+        when(conversationRepository.findBetweenUsers("u1", "u2")).thenReturn(Optional.of(existing));
+        when(conversationMemberRepository.insertActiveMemberIfAbsent(10L, "u1")).thenReturn(0);
+        when(conversationMemberRepository.insertActiveMemberIfAbsent(10L, "u2")).thenReturn(1);
+
+        assertDoesNotThrow(() -> chatService.getOrCreateConversation("u1", "u2"));
+
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u1");
+        verify(conversationMemberRepository).insertActiveMemberIfAbsent(10L, "u2");
     }
 }
