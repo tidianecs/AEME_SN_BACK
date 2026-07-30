@@ -8,6 +8,8 @@ import com.ditix.backend.Chat.Repository.MessageRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.ditix.backend.Chat.Models.ConversationType;
+import com.ditix.backend.Chat.Repository.ConversationMemberRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +19,14 @@ public class ChatService {
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final ConversationMemberRepository conversationMemberRepository;
 
     public ChatService(ConversationRepository conversationRepository,
-                       MessageRepository messageRepository) {
+                       MessageRepository messageRepository,
+                       ConversationMemberRepository conversationMemberRepository) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
+        this.conversationMemberRepository = conversationMemberRepository;
     }
 
     public boolean canAccessConversation(Long conversationId, String userId) {
@@ -60,8 +65,9 @@ public class ChatService {
     }
 
     // Crée ou récupère une conversation entre deux users
+    @Transactional
     public Conversation getOrCreateConversation(String userOneId, String userTwoId) {
-        return conversationRepository
+        Conversation conversation = conversationRepository
             .findBetweenUsers(userOneId, userTwoId)
             .orElseGet(() -> {
                 Conversation conv = new Conversation();
@@ -69,6 +75,29 @@ public class ChatService {
                 conv.setUserTwoId(userTwoId);
                 return conversationRepository.save(conv);
             });
+
+        ensureDirectMembers(conversation);
+        return conversation;
+    }
+
+    private void ensureDirectMembers(Conversation conversation) {
+        if (conversation == null || conversation.getId() == null) {
+            return;
+        }
+        if (conversation.getType() != ConversationType.DIRECT) {
+            return;
+        }
+
+        String u1 = conversation.getUserOneId();
+        String u2 = conversation.getUserTwoId();
+
+        if (u1 != null && !u1.trim().isEmpty()) {
+            conversationMemberRepository.insertActiveMemberIfAbsent(conversation.getId(), u1);
+        }
+
+        if (u2 != null && !u2.trim().isEmpty() && !u2.equals(u1)) {
+            conversationMemberRepository.insertActiveMemberIfAbsent(conversation.getId(), u2);
+        }
     }
 
     // Récupère toutes les conversations d'un user

@@ -19,6 +19,28 @@ public class Conversation {
 
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private ConversationType type = ConversationType.DIRECT;
+
+    @Column(length = 255)
+    private String name;
+
+    @Column(name = "reference_id", length = 255)
+    private String referenceId;
+
+    @Column(name = "created_by_user_id", length = 255)
+    private String createdByUserId;
+
+    @Column(name = "system_managed", nullable = false)
+    private boolean systemManaged = false;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -47,5 +69,54 @@ public class Conversation {
 
     public LocalDateTime getCreatedAt() { 
         return createdAt; 
+    }
+
+    public ConversationType getType() {
+        return type;
+    }
+    public void setType(ConversationType type) {
+        this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getReferenceId() {
+        return referenceId;
+    }
+    public void setReferenceId(String referenceId) {
+        this.referenceId = referenceId;
+    }
+
+    public String getCreatedByUserId() {
+        return createdByUserId;
+    }
+    public void setCreatedByUserId(String createdByUserId) {
+        this.createdByUserId = createdByUserId;
+    }
+
+    public boolean isSystemManaged() {
+        return systemManaged;
+    }
+    public void setSystemManaged(boolean systemManaged) {
+        this.systemManaged = systemManaged;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
