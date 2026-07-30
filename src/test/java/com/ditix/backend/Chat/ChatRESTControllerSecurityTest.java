@@ -136,4 +136,39 @@ public class ChatRESTControllerSecurityTest {
         verify(chatService, never()).getCounterpartUserId(anyLong(), anyString());
         verify(authService, never()).getUserById(anyString());
     }
+    @Test
+    void getMessages_missingConversation_shouldReturn404() throws Exception {
+        when(chatService.getMessages(1L, "user-a"))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation introuvable"));
+
+        mockMvc.perform(get("/api/v1/chat/conversations/1/messages")
+                .with(SecurityMockMvcRequestPostProcessors.jwt()
+                        .jwt(jwt -> jwt.subject("user-a"))
+                        .authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getMessages_nonParticipant_shouldReturn403() throws Exception {
+        when(chatService.getMessages(1L, "user-a"))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
+
+        mockMvc.perform(get("/api/v1/chat/conversations/1/messages")
+                .with(SecurityMockMvcRequestPostProcessors.jwt()
+                        .jwt(jwt -> jwt.subject("user-a"))
+                        .authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteConversation_nonParticipant_shouldReturn403() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"))
+                .when(chatService).deleteConversation(1L, "user-a");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/chat/conversations/1")
+                .with(SecurityMockMvcRequestPostProcessors.jwt()
+                        .jwt(jwt -> jwt.subject("user-a"))
+                        .authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isForbidden());
+    }
 }

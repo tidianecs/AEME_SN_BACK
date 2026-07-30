@@ -34,9 +34,25 @@ public class ChatService {
             return false;
         }
         return conversationRepository.findById(conversationId)
-                .map(conv -> java.util.Objects.equals(userId, conv.getUserOneId()) ||
-                             java.util.Objects.equals(userId, conv.getUserTwoId()))
+                .map(conv -> conv.isActive() && conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(conversationId, userId))
                 .orElse(false);
+    }
+
+    public Conversation requireActiveConversationMember(Long conversationId, String userId) {
+        if (conversationId == null || userId == null || userId.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        }
+        Conversation conv = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation introuvable"));
+
+        if (!conv.isActive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        }
+
+        if (!conversationMemberRepository.existsByConversationIdAndUserIdAndActiveTrue(conversationId, userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        }
+        return conv;
     }
 
     public String getCounterpartUserId(Long conversationId, String requesterUserId) {
@@ -44,8 +60,11 @@ public class ChatService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
 
-        Conversation conv = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
+        Conversation conv = requireActiveConversationMember(conversationId, requesterUserId);
+
+        if (conv.getType() != ConversationType.DIRECT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Counterpart not applicable for this conversation type");
+        }
 
         if (java.util.Objects.equals(requesterUserId, conv.getUserOneId())) {
             String counterpart = conv.getUserTwoId();
@@ -107,14 +126,7 @@ public class ChatService {
 
     // Récupère l'historique des messages d'une conversation
     public List<MessageDTO> getMessages(Long conversationId, String userId) {
-        Conversation conv = conversationRepository.findById(conversationId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Conversation introuvable"));
-
-        // Vérifie que le user fait partie de la conversation
-        if (!conv.getUserOneId().equals(userId) && !conv.getUserTwoId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
-        }
+        Conversation conv = requireActiveConversationMember(conversationId, userId);
 
         return messageRepository
             .findByConversationIdOrderBySentAtAsc(conversationId)
@@ -125,12 +137,10 @@ public class ChatService {
 
     @Transactional
     public void deleteConversation(Long id, String userId) {
-        Conversation conv = conversationRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Conversation introuvable"));
+        Conversation conv = requireActiveConversationMember(id, userId);
 
-        if (!conv.getUserOneId().equals(userId) && !conv.getUserTwoId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
+        if (conv.getType() != ConversationType.DIRECT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seule une conversation directe peut être supprimée");
         }
 
         // Supprime d'abord les messages de la conversation
