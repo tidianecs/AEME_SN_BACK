@@ -20,4 +20,28 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     @Query("SELECT c FROM Conversation c JOIN ConversationMember cm ON c.id = cm.conversationId WHERE " +
            "cm.userId = :userId AND cm.active = true AND c.active = true ORDER BY c.createdAt DESC")
     List<Conversation> findAllByUserId(String userId);
+
+    Optional<Conversation> findByTypeAndActiveTrue(com.ditix.backend.Chat.Models.ConversationType type);
+
+    Optional<Conversation> findByTypeAndReferenceIdAndActiveTrue(com.ditix.backend.Chat.Models.ConversationType type, String referenceId);
+
+    @Query("SELECT c FROM Conversation c WHERE c.type <> com.ditix.backend.Chat.Models.ConversationType.DIRECT ORDER BY c.active DESC, c.createdAt DESC, c.id DESC")
+    List<Conversation> findByTypeNotOrderByCreatedAtDesc();
+
+    @Query(value = "SELECT pg_advisory_xact_lock(hashtextextended(:lockKey, 0))", nativeQuery = true)
+    void acquireAdvisoryXactLock(String lockKey);
+
+    @Query(value = "INSERT INTO public.conversations (" +
+                   "created_at, type, name, reference_id, created_by_user_id, system_managed, active, updated_at" +
+                   ") VALUES (" +
+                   "CURRENT_TIMESTAMP, :type, :name, :referenceId, :createdByUserId, TRUE, TRUE, CURRENT_TIMESTAMP" +
+                   ") ON CONFLICT (type) WHERE type = 'GLOBAL' AND active = true DO NOTHING RETURNING id", nativeQuery = true)
+    Long insertGlobalGroupAtomically(String type, String name, String referenceId, String createdByUserId);
+
+    @Query(value = "INSERT INTO public.conversations (" +
+                   "created_at, type, name, reference_id, created_by_user_id, system_managed, active, updated_at" +
+                   ") VALUES (" +
+                   "CURRENT_TIMESTAMP, :type, :name, :referenceId, :createdByUserId, TRUE, TRUE, CURRENT_TIMESTAMP" +
+                   ") ON CONFLICT (type, reference_id) WHERE active = true AND type IN ('COHORT', 'STRUCTURE') AND reference_id IS NOT NULL DO NOTHING RETURNING id", nativeQuery = true)
+    Long insertCohortOrStructureGroupAtomically(String type, String name, String referenceId, String createdByUserId);
 }
