@@ -149,10 +149,11 @@ public class ChatService {
     }
 
     // Persiste un message en base
-    public MessageDTO saveMessage(Long conversationId, String senderId, String content) {
+    public MessageDTO saveMessage(Long conversationId, String senderId, String senderFullName, String content) {
         Message message = new Message();
         message.setConversationId(conversationId);
         message.setSenderId(senderId);
+        message.setSenderFullName(senderFullName);
         message.setContent(content);
         return new MessageDTO(messageRepository.save(message));
     }

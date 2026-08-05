@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.security.Principal;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,8 +33,13 @@ public class ChatWSControllerTest {
     private ChatWSController chatWSController;
 
     private JwtAuthenticationToken createMockAuth(String subject) {
+        return createMockAuth(subject, Map.of("name", "Test User"));
+    }
+
+    private JwtAuthenticationToken createMockAuth(String subject, Map<String, Object> claims) {
         Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn(subject);
+        lenient().when(jwt.getClaims()).thenReturn(claims);
         JwtAuthenticationToken auth = mock(JwtAuthenticationToken.class);
         when(auth.getToken()).thenReturn(jwt);
         return auth;
@@ -47,13 +53,13 @@ public class ChatWSControllerTest {
         request.setContent("Hello");
 
         when(chatService.canAccessConversation(1L, "user1")).thenReturn(true);
-        MessageDTO mockMessageDTO = new MessageDTO(1L, "user1", "Hello");
-        when(chatService.saveMessage(1L, "user1", "Hello")).thenReturn(mockMessageDTO);
+        MessageDTO mockMessageDTO = new MessageDTO(1L, "user1", "Test User", "Hello");
+        when(chatService.saveMessage(1L, "user1", "Test User", "Hello")).thenReturn(mockMessageDTO);
 
         assertDoesNotThrow(() -> chatWSController.sendMessage(request, auth));
 
         verify(chatService, times(1)).canAccessConversation(1L, "user1");
-        verify(chatService, times(1)).saveMessage(1L, "user1", "Hello");
+        verify(chatService, times(1)).saveMessage(1L, "user1", "Test User", "Hello");
         verify(messagingTemplate, times(1)).convertAndSend("/topic/conversation.1", mockMessageDTO);
     }
 
@@ -68,7 +74,7 @@ public class ChatWSControllerTest {
 
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, auth));
 
-        verify(chatService, never()).saveMessage(any(), any(), any());
+        verify(chatService, never()).saveMessage(any(), any(), any(), any());
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
@@ -78,7 +84,7 @@ public class ChatWSControllerTest {
         
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, null));
 
-        verify(chatService, never()).saveMessage(any(), any(), any());
+        verify(chatService, never()).saveMessage(any(), any(), any(), any());
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
@@ -90,7 +96,7 @@ public class ChatWSControllerTest {
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, auth));
 
         verify(chatService, never()).canAccessConversation(any(), any());
-        verify(chatService, never()).saveMessage(any(), any(), any());
+        verify(chatService, never()).saveMessage(any(), any(), any(), any());
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
@@ -102,12 +108,45 @@ public class ChatWSControllerTest {
         request.setContent("Hello");
         
         when(chatService.canAccessConversation(1L, "vrai-user")).thenReturn(true);
-        MessageDTO mockMessageDTO = new MessageDTO(1L, "vrai-user", "Hello");
-        when(chatService.saveMessage(1L, "vrai-user", "Hello")).thenReturn(mockMessageDTO);
+        MessageDTO mockMessageDTO = new MessageDTO(1L, "vrai-user", "Test User", "Hello");
+        when(chatService.saveMessage(1L, "vrai-user", "Test User", "Hello")).thenReturn(mockMessageDTO);
 
         assertDoesNotThrow(() -> chatWSController.sendMessage(request, auth));
 
-        verify(chatService, times(1)).saveMessage(1L, "vrai-user", "Hello");
+        verify(chatService, times(1)).saveMessage(1L, "vrai-user", "Test User", "Hello");
+    }
+
+    @Test
+    void testSenderFullNameFallbacks() {
+        // Fallback 2: given_name + family_name
+        JwtAuthenticationToken auth2 = createMockAuth("user2", Map.of("given_name", "Jane", "family_name", "Doe"));
+        SendMessageRequest req2 = new SendMessageRequest();
+        req2.setConversationId(2L);
+        req2.setContent("Test");
+        when(chatService.canAccessConversation(2L, "user2")).thenReturn(true);
+        when(chatService.saveMessage(2L, "user2", "Jane Doe", "Test")).thenReturn(new MessageDTO(2L, "user2", "Jane Doe", "Test"));
+        assertDoesNotThrow(() -> chatWSController.sendMessage(req2, auth2));
+        verify(chatService, times(1)).saveMessage(2L, "user2", "Jane Doe", "Test");
+
+        // Fallback 3: preferred_username
+        JwtAuthenticationToken auth3 = createMockAuth("user3", Map.of("preferred_username", "johnd"));
+        SendMessageRequest req3 = new SendMessageRequest();
+        req3.setConversationId(3L);
+        req3.setContent("Test");
+        when(chatService.canAccessConversation(3L, "user3")).thenReturn(true);
+        when(chatService.saveMessage(3L, "user3", "johnd", "Test")).thenReturn(new MessageDTO(3L, "user3", "johnd", "Test"));
+        assertDoesNotThrow(() -> chatWSController.sendMessage(req3, auth3));
+        verify(chatService, times(1)).saveMessage(3L, "user3", "johnd", "Test");
+
+        // Fallback 4: Utilisateur
+        JwtAuthenticationToken auth4 = createMockAuth("user4", Map.of());
+        SendMessageRequest req4 = new SendMessageRequest();
+        req4.setConversationId(4L);
+        req4.setContent("Test");
+        when(chatService.canAccessConversation(4L, "user4")).thenReturn(true);
+        when(chatService.saveMessage(4L, "user4", "Utilisateur", "Test")).thenReturn(new MessageDTO(4L, "user4", "Utilisateur", "Test"));
+        assertDoesNotThrow(() -> chatWSController.sendMessage(req4, auth4));
+        verify(chatService, times(1)).saveMessage(4L, "user4", "Utilisateur", "Test");
     }
 
     @Test
