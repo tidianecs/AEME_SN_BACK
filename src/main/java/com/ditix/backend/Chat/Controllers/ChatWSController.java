@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import java.security.Principal;
+import java.util.Map;
 
 @Controller
 public class ChatWSController {
@@ -20,6 +21,37 @@ public class ChatWSController {
                             ChatService chatService) {
         this.messagingTemplate = messagingTemplate;
         this.chatService = chatService;
+    }
+
+    private String extractSenderFullName(JwtAuthenticationToken auth) {
+        Map<String, Object> claims = auth.getToken().getClaims();
+
+        String name = (String) claims.get("name");
+        if (name != null && !name.trim().isEmpty()) {
+            return name.trim();
+        }
+
+        String givenName = (String) claims.get("given_name");
+        String familyName = (String) claims.get("family_name");
+        if (givenName != null || familyName != null) {
+            String combined = "";
+            if (givenName != null && !givenName.trim().isEmpty()) {
+                combined += givenName.trim();
+            }
+            if (familyName != null && !familyName.trim().isEmpty()) {
+                combined += (combined.isEmpty() ? "" : " ") + familyName.trim();
+            }
+            if (!combined.isEmpty()) {
+                return combined;
+            }
+        }
+
+        String preferredUsername = (String) claims.get("preferred_username");
+        if (preferredUsername != null && !preferredUsername.trim().isEmpty()) {
+            return preferredUsername.trim();
+        }
+
+        return "Utilisateur";
     }
 
     @MessageMapping("/chat.send")
@@ -49,10 +81,13 @@ public class ChatWSController {
             throw new org.springframework.security.access.AccessDeniedException("Accès refusé à cette conversation");
         }
 
+        String senderFullName = extractSenderFullName(auth);
+
         // Persiste et broadcast le message
         MessageDTO saved = chatService.saveMessage(
             conversationId,
             requesterUserId,
+            senderFullName,
             request.getContent()
         );
 

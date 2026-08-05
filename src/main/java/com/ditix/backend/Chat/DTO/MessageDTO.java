@@ -8,6 +8,7 @@ public class MessageDTO {
     private Long id;
     private Long conversationId;
     private String senderId;
+    private String senderFullName;
     private String content;
     private LocalDateTime sentAt;
 
@@ -15,14 +16,16 @@ public class MessageDTO {
         this.id = message.getId();
         this.conversationId = message.getConversationId();
         this.senderId = message.getSenderId();
+        this.senderFullName = message.getSenderFullName();
         this.content = message.getContent();
         this.sentAt = message.getSentAt();
     }
 
     // Constructor pour WebSocket (message pas encore persisté)
-    public MessageDTO(Long conversationId, String senderId, String content) {
+    public MessageDTO(Long conversationId, String senderId, String senderFullName, String content) {
         this.conversationId = conversationId;
         this.senderId = senderId;
+        this.senderFullName = senderFullName;
         this.content = content;
         this.sentAt = LocalDateTime.now();
     }
@@ -30,6 +33,7 @@ public class MessageDTO {
     public Long getId() { return id; }
     public Long getConversationId() { return conversationId; }
     public String getSenderId() { return senderId; }
+    public String getSenderFullName() { return senderFullName; }
     public String getContent() { return content; }
     public LocalDateTime getSentAt() { return sentAt; }
     public void setId(Long id) { this.id = id; }
