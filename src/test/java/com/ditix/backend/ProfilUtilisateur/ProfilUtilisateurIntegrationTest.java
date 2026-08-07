@@ -221,7 +221,7 @@ public class ProfilUtilisateurIntegrationTest {
     @Test
     void testKeycloakIdDuplique_Rejete() {
         UUID commonUuid = UUID.randomUUID();
-        
+
         ProfilUtilisateur p1 = createBaseProfil(RoleUtilisateur.ADMIN);
         p1.setKeycloakId(commonUuid);
         profilRepository.saveAndFlush(p1);
@@ -234,7 +234,7 @@ public class ProfilUtilisateurIntegrationTest {
     @Test
     void testEmailDuplique_Rejete() {
         String commonEmail = "test@test.com";
-        
+
         ProfilUtilisateur p1 = createBaseProfil(RoleUtilisateur.ADMIN);
         p1.setEmail(commonEmail);
         profilRepository.saveAndFlush(p1);
@@ -242,5 +242,99 @@ public class ProfilUtilisateurIntegrationTest {
         ProfilUtilisateur p2 = createBaseProfil(RoleUtilisateur.ADMIN);
         p2.setEmail(commonEmail);
         assertThrows(DataIntegrityViolationException.class, () -> profilRepository.saveAndFlush(p2));
+    }
+
+    @Test
+    void testFindGestionnairesByMinistereId_and_StructureId() {
+        Ministere minA = new Ministere();
+        minA.setNom("Ministère A");
+        minA.setCode("MA");
+        Ministere ministereA = ministereRepository.saveAndFlush(minA);
+
+        Ministere minB = new Ministere();
+        minB.setNom("Ministère B");
+        minB.setCode("MB");
+        Ministere ministereB = ministereRepository.saveAndFlush(minB);
+
+        Structure sA1 = new Structure();
+        sA1.setName("Structure A1");
+        sA1.setMinistereV2(ministereA);
+        Structure structureA1 = structureRepository.saveAndFlush(sA1);
+
+        Structure sA2 = new Structure();
+        sA2.setName("Structure A2");
+        sA2.setMinistereV2(ministereA);
+        Structure structureA2 = structureRepository.saveAndFlush(sA2);
+
+        Structure sB1 = new Structure();
+        sB1.setName("Structure B1");
+        sB1.setMinistereV2(ministereB);
+        Structure structureB1 = structureRepository.saveAndFlush(sB1);
+
+        Cohorte c1 = new Cohorte();
+        c1.setNom("Cohorte 1");
+        c1.setCode("C1");
+        Cohorte cohorte1 = cohorteRepository.saveAndFlush(c1);
+
+        Cohorte c2 = new Cohorte();
+        c2.setNom("Cohorte 2");
+        c2.setCode("C2");
+        Cohorte cohorte2 = cohorteRepository.saveAndFlush(c2);
+
+        ProfilUtilisateur g1 = createBaseProfil(RoleUtilisateur.GESTIONNAIRE);
+        g1.setStructure(structureA1);
+        g1.setCohorte(cohorte1);
+        profilRepository.saveAndFlush(g1);
+
+        ProfilUtilisateur g2 = createBaseProfil(RoleUtilisateur.GESTIONNAIRE);
+        g2.setStructure(structureA2);
+        g2.setCohorte(cohorte2);
+        profilRepository.saveAndFlush(g2);
+
+        ProfilUtilisateur g3 = createBaseProfil(RoleUtilisateur.GESTIONNAIRE);
+        g3.setStructure(structureB1);
+        g3.setCohorte(cohorte1);
+        profilRepository.saveAndFlush(g3);
+
+        ProfilUtilisateur dageA = createBaseProfil(RoleUtilisateur.DAGE);
+        dageA.setMinistere(ministereA);
+        profilRepository.saveAndFlush(dageA);
+
+        ProfilUtilisateur admin = createBaseProfil(RoleUtilisateur.ADMIN);
+        profilRepository.saveAndFlush(admin);
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+
+        // TEST A: findGestionnairesByMinistereId(ministereA.id, pageable)
+        org.springframework.data.domain.Page<ProfilUtilisateur> pageMinA = profilRepository.findGestionnairesByMinistereId(ministereA.getId(), pageable);
+        assertEquals(2, pageMinA.getTotalElements());
+        assertTrue(pageMinA.getContent().stream().anyMatch(p -> p.getId().equals(g1.getId())));
+        assertTrue(pageMinA.getContent().stream().anyMatch(p -> p.getId().equals(g2.getId())));
+
+        // TEST B: findGestionnairesByMinistereId(ministereB.id, pageable)
+        org.springframework.data.domain.Page<ProfilUtilisateur> pageMinB = profilRepository.findGestionnairesByMinistereId(ministereB.getId(), pageable);
+        assertEquals(1, pageMinB.getTotalElements());
+        assertEquals(g3.getId(), pageMinB.getContent().get(0).getId());
+
+        // TEST C: findGestionnairesByStructureId(structureA1.id, pageable)
+        org.springframework.data.domain.Page<ProfilUtilisateur> pageStructA1 = profilRepository.findGestionnairesByStructureId(structureA1.getId(), pageable);
+        assertEquals(1, pageStructA1.getTotalElements());
+        assertEquals(g1.getId(), pageStructA1.getContent().get(0).getId());
+
+        // TEST D: findGestionnairesByStructureId(structureA2.id, pageable)
+        org.springframework.data.domain.Page<ProfilUtilisateur> pageStructA2 = profilRepository.findGestionnairesByStructureId(structureA2.getId(), pageable);
+        assertEquals(1, pageStructA2.getTotalElements());
+        assertEquals(g2.getId(), pageStructA2.getContent().get(0).getId());
+
+        // TEST E: findGestionnairesByStructureId(structureB1.id, pageable)
+        org.springframework.data.domain.Page<ProfilUtilisateur> pageStructB1 = profilRepository.findGestionnairesByStructureId(structureB1.getId(), pageable);
+        assertEquals(1, pageStructB1.getTotalElements());
+        assertEquals(g3.getId(), pageStructB1.getContent().get(0).getId());
+
+        // Check LazyInitializationException is NOT thrown for relations due to EntityGraph
+        ProfilUtilisateur loadedG1 = pageMinA.getContent().stream().filter(p -> p.getId().equals(g1.getId())).findFirst().get();
+        assertNotNull(loadedG1.getStructure());
+        assertNotNull(loadedG1.getStructure().getMinistereV2());
+        assertNotNull(loadedG1.getCohorte());
     }
 }
