@@ -1,20 +1,13 @@
-package com.ditix.backend.Structure.Model;
+package com.ditix.backend.Structure.DTO;
 
-import jakarta.persistence.*;
+import com.ditix.backend.Structure.Model.Structure;
 import java.time.ZonedDateTime;
-import com.ditix.backend.Ministere.Model.Ministere;
 
-@Entity
-@Table(name = "structures")
-public class Structure {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class StructureDTO {
+    
+    // V1 Fields
     private Long id;
-
-    @Column(nullable = false)
     private String name;
-
     private String latitude;
     private String longitude;
     private String ministere;
@@ -22,72 +15,76 @@ public class Structure {
     private String zone;
 
     // V2 Fields
-    @Column(length = 80)
     private String code;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ministere_id")
-    private Ministere ministereV2;
-
-    @Column(name = "latitude_v2")
+    private Long ministereId;
+    private String ministereNom;
     private Double latitudeV2;
-
-    @Column(name = "longitude_v2")
     private Double longitudeV2;
-
-    @Column(length = 100)
     private String departement;
-
-    @Column(length = 100)
     private String commune;
-
-    @Column(length = 255)
     private String adresse;
-
-    @Column(length = 100)
     private String categorie;
-
-    @Column(nullable = false)
-    private Boolean actif = true;
-
-    @Column(name = "cree_le", nullable = false)
+    private Boolean actif;
     private ZonedDateTime creeLe;
-
-    @Column(name = "modifie_le", nullable = false)
     private ZonedDateTime modifieLe;
 
-    @PrePersist
-    protected void onCreate() {
-        creeLe = ZonedDateTime.now();
-        modifieLe = ZonedDateTime.now();
+    public StructureDTO(Structure structure) {
+        // V1 Mapping
+        this.id = structure.getId();
+        this.name = structure.getName();
+        this.latitude = structure.getLatitude();
+        this.longitude = structure.getLongitude();
+        this.ministere = structure.getMinistere();
+        this.region = structure.getRegion();
+        this.zone = structure.getZone();
+
+        // V2 Mapping
+        this.code = structure.getCode();
+        if (structure.getMinistereV2() != null) {
+            this.ministereId = structure.getMinistereV2().getId();
+            this.ministereNom = structure.getMinistereV2().getNom();
+        }
+        this.latitudeV2 = structure.getLatitudeV2();
+        this.longitudeV2 = structure.getLongitudeV2();
+        this.departement = structure.getDepartement();
+        this.commune = structure.getCommune();
+        this.adresse = structure.getAdresse();
+        this.categorie = structure.getCategorie();
+        this.actif = structure.getActif();
+        this.creeLe = structure.getCreeLe();
+        this.modifieLe = structure.getModifieLe();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        modifieLe = ZonedDateTime.now();
-    }
-
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
     public String getLatitude() { return latitude; }
     public void setLatitude(String latitude) { this.latitude = latitude; }
+
     public String getLongitude() { return longitude; }
     public void setLongitude(String longitude) { this.longitude = longitude; }
+
     public String getMinistere() { return ministere; }
     public void setMinistere(String ministere) { this.ministere = ministere; }
+
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
+
     public String getZone() { return zone; }
     public void setZone(String zone) { this.zone = zone; }
 
-    // V2 Getters and Setters
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
 
-    public Ministere getMinistereV2() { return ministereV2; }
-    public void setMinistereV2(Ministere ministereV2) { this.ministereV2 = ministereV2; }
+    public Long getMinistereId() { return ministereId; }
+    public void setMinistereId(Long ministereId) { this.ministereId = ministereId; }
+
+    public String getMinistereNom() { return ministereNom; }
+    public void setMinistereNom(String ministereNom) { this.ministereNom = ministereNom; }
 
     public Double getLatitudeV2() { return latitudeV2; }
     public void setLatitudeV2(Double latitudeV2) { this.latitudeV2 = latitudeV2; }
