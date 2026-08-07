@@ -37,6 +37,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/structures", "/api/v1/structures/**").hasRole("admin")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/structures", "/api/v1/structures/**").hasRole("admin")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/structures", "/api/v1/structures/**").hasRole("admin")
+                .requestMatchers(HttpMethod.GET, "/api/v1/ministeres", "/api/v1/ministeres/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/ministeres", "/api/v1/ministeres/**").hasRole("admin")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/ministeres", "/api/v1/ministeres/**").hasRole("admin")
+                .requestMatchers(HttpMethod.GET, "/api/v1/cohortes", "/api/v1/cohortes/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/cohortes", "/api/v1/cohortes/**").hasRole("admin")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/cohortes", "/api/v1/cohortes/**").hasRole("admin")
                 .requestMatchers("/api/v1/admin/**").hasRole("admin")
                 .requestMatchers(HttpMethod.GET, "/api/v1/reports/all").hasRole("admin")
                 // Tout le reste nécessite un token

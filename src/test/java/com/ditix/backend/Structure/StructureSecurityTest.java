@@ -3,6 +3,7 @@ package com.ditix.backend.Structure;
 import com.ditix.backend.Core.SecurityConfig;
 import com.ditix.backend.Structure.Controllers.StructureController;
 import com.ditix.backend.Structure.Model.Structure;
+import com.ditix.backend.Structure.DTO.StructureDTO;
 import com.ditix.backend.Structure.Services.StructureService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,8 @@ public class StructureSecurityTest {
     @Test
     void getStructureById_withoutAuth_shouldReturn200() throws Exception {
         Structure s = new Structure();
-        when(structureService.getStructureById(1L)).thenReturn(s);
+        StructureDTO dto = new StructureDTO(s);
+        when(structureService.getStructureById(1L)).thenReturn(dto);
         
         mockMvc.perform(get("/api/v1/structures/1"))
                 .andExpect(status().isOk());
@@ -87,7 +89,8 @@ public class StructureSecurityTest {
     void createStructure_withRoleAdmin_shouldReturn201() throws Exception {
         Map<String, String> body = Map.of("name", "Test Structure");
         Structure s = new Structure();
-        when(structureService.createStructure(any())).thenReturn(s);
+        StructureDTO dto = new StructureDTO(s);
+        when(structureService.createStructure(any())).thenReturn(dto);
         
         mockMvc.perform(post("/api/v1/structures")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -127,7 +130,8 @@ public class StructureSecurityTest {
     void updateStructure_withRoleAdmin_shouldReturn200() throws Exception {
         Map<String, String> body = Map.of("name", "Test Structure");
         Structure s = new Structure();
-        when(structureService.updateStructure(eq(1L), any())).thenReturn(s);
+        StructureDTO dto = new StructureDTO(s);
+        when(structureService.updateStructure(eq(1L), any())).thenReturn(dto);
         
         mockMvc.perform(patch("/api/v1/structures/1")
                 .contentType(MediaType.APPLICATION_JSON)
