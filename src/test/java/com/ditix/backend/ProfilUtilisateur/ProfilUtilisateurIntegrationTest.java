@@ -245,6 +245,28 @@ public class ProfilUtilisateurIntegrationTest {
     }
 
     @Test
+    void testEmailCaseInsensitiveDuplique_Rejete() {
+        ProfilUtilisateur p1 = createBaseProfil(RoleUtilisateur.ADMIN);
+        p1.setEmail("test@aeme.sn");
+        profilRepository.saveAndFlush(p1);
+
+        ProfilUtilisateur p2 = createBaseProfil(RoleUtilisateur.ADMIN);
+        p2.setEmail("TEST@AEME.SN");
+        assertThrows(DataIntegrityViolationException.class, () -> profilRepository.saveAndFlush(p2));
+    }
+
+    @Test
+    void testEmailsDifferents_Accepte() {
+        ProfilUtilisateur p1 = createBaseProfil(RoleUtilisateur.ADMIN);
+        p1.setEmail("user1@aeme.sn");
+        profilRepository.saveAndFlush(p1);
+
+        ProfilUtilisateur p2 = createBaseProfil(RoleUtilisateur.ADMIN);
+        p2.setEmail("user2@aeme.sn");
+        assertDoesNotThrow(() -> profilRepository.saveAndFlush(p2));
+    }
+
+    @Test
     void testFindGestionnairesByMinistereId_and_StructureId() {
         Ministere minA = new Ministere();
         minA.setNom("Ministère A");
