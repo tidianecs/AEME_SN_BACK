@@ -29,6 +29,9 @@ public class ReportSecurityTest {
     @MockBean
     private ReportService reportService;
 
+    @MockBean
+    private com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService;
+
     @Test
     void getAllReports_withoutAuthentication_shouldReturn401() throws Exception {
         mockMvc.perform(get("/api/v1/reports/all"))
