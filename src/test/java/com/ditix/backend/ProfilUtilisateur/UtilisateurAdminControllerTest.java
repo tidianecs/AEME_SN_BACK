@@ -44,7 +44,7 @@ public class UtilisateurAdminControllerTest {
 
     @MockBean
     private ProfilUtilisateurCourantService profilUtilisateurCourantService;
-    
+
     @MockBean
     private JwtDecoder jwtDecoder;
 
@@ -77,7 +77,7 @@ public class UtilisateurAdminControllerTest {
 
     @Test
     void creerUtilisateur_AdminMetier_Success() throws Exception {
-        when(profilUtilisateurCourantService.obtenirProfilCourant(any())).thenReturn(profilAdmin);
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any(JwtAuthenticationToken.class))).thenReturn(profilAdmin);
 
         ProfilUtilisateur createdProfil = new ProfilUtilisateur();
         createdProfil.setId(10L);
@@ -98,18 +98,24 @@ public class UtilisateurAdminControllerTest {
                 .andExpect(jsonPath("$.utilisateur.keycloakId").doesNotExist())
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.credential").doesNotExist());
+
+        Mockito.verify(profilUtilisateurCourantService).obtenirProfilCourant(any(JwtAuthenticationToken.class));
+        Mockito.verify(profilUtilisateurCourantService, Mockito.never()).obtenirProfilCourant(null);
     }
 
     @Test
     void creerUtilisateur_NonAdminMetier_Forbidden() throws Exception {
         ProfilUtilisateur profilUser = new ProfilUtilisateur();
         profilUser.setRole(RoleUtilisateur.GESTIONNAIRE);
-        when(profilUtilisateurCourantService.obtenirProfilCourant(any())).thenReturn(profilUser);
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any(JwtAuthenticationToken.class))).thenReturn(profilUser);
 
         mockMvc.perform(post("/api/v2/admin/utilisateurs")
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt().authorities(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_admin")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
+
+        Mockito.verify(profilUtilisateurCourantService).obtenirProfilCourant(any(JwtAuthenticationToken.class));
+        Mockito.verify(profilUtilisateurCourantService, Mockito.never()).obtenirProfilCourant(null);
     }
 }
