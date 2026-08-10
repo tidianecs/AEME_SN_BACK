@@ -16,11 +16,14 @@ public class ChatWSController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService;
 
     public ChatWSController(SimpMessagingTemplate messagingTemplate,
-                            ChatService chatService) {
+                            ChatService chatService,
+                            com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService) {
         this.messagingTemplate = messagingTemplate;
         this.chatService = chatService;
+        this.profilUtilisateurCourantService = profilUtilisateurCourantService;
     }
 
     private String extractSenderFullName(JwtAuthenticationToken auth) {
@@ -66,7 +69,15 @@ public class ChatWSController {
         }
 
         JwtAuthenticationToken auth = (JwtAuthenticationToken) principal;
-        String requesterUserId = auth.getToken().getSubject();
+
+        com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil;
+        try {
+            profil = profilUtilisateurCourantService.obtenirProfilCourant(auth);
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès au profil utilisateur refusé");
+        }
+
+        String requesterUserId = profil.getKeycloakId().toString();
 
         if (requesterUserId == null || requesterUserId.trim().isEmpty()) {
             throw new org.springframework.security.access.AccessDeniedException("ID utilisateur manquant");
