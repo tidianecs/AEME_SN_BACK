@@ -10,4 +10,11 @@ import java.util.List;
 public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findByCreatedByUserId(String userId);
     long countByCreatedByUserIdAndReportStatus(String userId, ReportStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT r FROM Report r " +
+            "JOIN r.profilUtilisateur p " +
+            "JOIN p.structure s " +
+            "JOIN s.ministereV2 m " +
+            "WHERE p.role = 'GESTIONNAIRE' AND m.id = :ministereId")
+    List<Report> findByMinistereIdAndRoleGestionnaire(@org.springframework.data.repository.query.Param("ministereId") Long ministereId);
 }

@@ -22,6 +22,9 @@ public class ReportServiceAccessTest {
     @Mock
     private ReportRepository reportRepository;
 
+    @Mock
+    private com.ditix.backend.Report.Services.ReportAutorisationService reportAutorisationService;
+
     @InjectMocks
     private ReportService reportService;
 
@@ -36,25 +39,28 @@ public class ReportServiceAccessTest {
     void getReportById_owner_shouldReturnReport() {
         Report report = createMockReport("owner-user-id");
         when(reportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(reportAutorisationService.peutLireRapport(eq(report), any())).thenReturn(true);
 
-        assertDoesNotThrow(() -> reportService.getReportById(1L, "owner-user-id", false));
+        assertDoesNotThrow(() -> reportService.getReportById(1L, null));
     }
 
     @Test
     void getReportById_admin_shouldReturnReport() {
         Report report = createMockReport("owner-user-id");
         when(reportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(reportAutorisationService.peutLireRapport(eq(report), any())).thenReturn(true);
 
-        assertDoesNotThrow(() -> reportService.getReportById(1L, "admin-user-id", true));
+        assertDoesNotThrow(() -> reportService.getReportById(1L, null));
     }
 
     @Test
     void getReportById_otherUser_shouldThrow403() {
         Report report = createMockReport("owner-user-id");
         when(reportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(reportAutorisationService.peutLireRapport(eq(report), any())).thenReturn(false);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
-                reportService.getReportById(1L, "other-user-id", false));
+                reportService.getReportById(1L, null));
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     }
 
@@ -63,7 +69,7 @@ public class ReportServiceAccessTest {
         when(reportRepository.findById(1L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
-                reportService.getReportById(1L, "owner-user-id", false));
+                reportService.getReportById(1L, null));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
 
@@ -71,25 +77,28 @@ public class ReportServiceAccessTest {
     void getRawReport_owner_shouldReturnReport() {
         Report report = createMockReport("owner-user-id");
         when(reportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(reportAutorisationService.peutLireRapport(eq(report), any())).thenReturn(true);
 
-        assertDoesNotThrow(() -> reportService.getRawReport(1L, "owner-user-id", false));
+        assertDoesNotThrow(() -> reportService.getRawReport(1L, null));
     }
 
     @Test
     void getRawReport_admin_shouldReturnReport() {
         Report report = createMockReport("owner-user-id");
         when(reportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(reportAutorisationService.peutLireRapport(eq(report), any())).thenReturn(true);
 
-        assertDoesNotThrow(() -> reportService.getRawReport(1L, "admin-user-id", true));
+        assertDoesNotThrow(() -> reportService.getRawReport(1L, null));
     }
 
     @Test
     void getRawReport_otherUser_shouldThrow403() {
         Report report = createMockReport("owner-user-id");
         when(reportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(reportAutorisationService.peutLireRapport(eq(report), any())).thenReturn(false);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
-                reportService.getRawReport(1L, "other-user-id", false));
+                reportService.getRawReport(1L, null));
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     }
 
@@ -98,7 +107,7 @@ public class ReportServiceAccessTest {
         when(reportRepository.findById(1L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
-                reportService.getRawReport(1L, "owner-user-id", false));
+                reportService.getRawReport(1L, null));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
 }

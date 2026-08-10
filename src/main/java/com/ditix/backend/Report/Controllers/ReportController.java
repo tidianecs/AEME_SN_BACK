@@ -98,8 +98,9 @@ public class ReportController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ReportResponseDTO>> getAllReports() {
-        return ResponseEntity.ok(reportService.getAllReports());
+    public ResponseEntity<List<ReportResponseDTO>> getAllReports(JwtAuthenticationToken authentication) {
+        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+        return ResponseEntity.ok(reportService.getAllReports(profil));
     }
 
     @GetMapping("/{id}")
@@ -107,10 +108,8 @@ public class ReportController {
             @PathVariable Long id,
             JwtAuthenticationToken authentication
     ) {
-        String requesterUserId = authentication.getToken().getSubject();
-        boolean admin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> "ROLE_admin".equals(authority.getAuthority()));
-        return ResponseEntity.ok(reportService.getReportById(id, requesterUserId, admin));
+        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+        return ResponseEntity.ok(reportService.getReportById(id, profil));
     }
 
     @DeleteMapping("/{id}")
@@ -129,10 +128,8 @@ public class ReportController {
             @PathVariable String fileType,
             JwtAuthenticationToken authentication
     ) throws IOException {
-        String requesterUserId = authentication.getToken().getSubject();
-        boolean admin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> "ROLE_admin".equals(authority.getAuthority()));
-        Report report = reportService.getRawReport(id, requesterUserId, admin);
+        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+        Report report = reportService.getRawReport(id, profil);
 
         String filePath = switch (fileType) {
             case "illustrations"              -> report.getIllustrationsPath();

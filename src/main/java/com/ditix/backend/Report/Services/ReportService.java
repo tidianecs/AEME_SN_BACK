@@ -28,8 +28,11 @@ public class ReportService {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    public ReportService(ReportRepository reportRepository) {
+    private final ReportAutorisationService reportAutorisationService;
+
+    public ReportService(ReportRepository reportRepository, ReportAutorisationService reportAutorisationService) {
         this.reportRepository = reportRepository;
+        this.reportAutorisationService = reportAutorisationService;
     }
 
     private String saveFile(MultipartFile file) throws IOException {
@@ -135,26 +138,40 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    public List<ReportResponseDTO> getAllReports() {
-        return reportRepository.findAll().stream()
+    public List<ReportResponseDTO> getAllReports(ProfilUtilisateur profil) {
+        List<Report> reports;
+        if (profil != null && profil.getRole() == com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN) {
+            reports = reportRepository.findAll();
+        } else if (profil != null && profil.getRole() == com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.DAGE) {
+            if (profil.getMinistere() != null) {
+                reports = reportRepository.findByMinistereIdAndRoleGestionnaire(profil.getMinistere().getId());
+            } else {
+                reports = List.of();
+            }
+        } else if (profil != null && profil.getRole() == com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.GESTIONNAIRE) {
+            reports = reportRepository.findByCreatedByUserId(profil.getKeycloakId().toString());
+        } else {
+            reports = List.of();
+        }
+
+        return reports.stream()
                 .map(ReportResponseDTO::new)
                 .collect(Collectors.toList());
     }
 
-    private Report getAccessibleReport(Long reportId, String requesterUserId, boolean admin) {
+    private Report getAccessibleReport(Long reportId, ProfilUtilisateur profil) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
-        if (admin) {
+
+        if (reportAutorisationService.peutLireRapport(report, profil)) {
             return report;
         }
-        if (Objects.equals(report.getCreatedByUserId(), requesterUserId)) {
-            return report;
-        }
+
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à ce rapport");
     }
 
-    public ReportResponseDTO getReportById(Long id, String requesterUserId, boolean admin) {
-        Report report = getAccessibleReport(id, requesterUserId, admin);
+    public ReportResponseDTO getReportById(Long id, ProfilUtilisateur profil) {
+        Report report = getAccessibleReport(id, profil);
         return new ReportResponseDTO(report);
     }
 
@@ -194,8 +211,8 @@ public class ReportService {
         return (int) (approved * 4 - rejected * 5);
     }
 
-    public Report getRawReport(Long id, String requesterUserId, boolean admin) {
-        return getAccessibleReport(id, requesterUserId, admin);
+    public Report getRawReport(Long id, ProfilUtilisateur profil) {
+        return getAccessibleReport(id, profil);
     }
 
     public List<ReportResponseDTO> getReportsByUserId(String userId) {

@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/cohortes", "/api/v1/cohortes/**").hasRole("admin")
                 .requestMatchers("/api/v1/admin/**").hasRole("admin")
                 .requestMatchers("/api/v2/admin/**").hasRole("admin")
-                .requestMatchers(HttpMethod.GET, "/api/v1/reports/all").hasRole("admin")
+                .requestMatchers(HttpMethod.GET, "/api/v1/reports/all").authenticated()
                 // Tout le reste nécessite un token
                 .anyRequest().authenticated()
             )
