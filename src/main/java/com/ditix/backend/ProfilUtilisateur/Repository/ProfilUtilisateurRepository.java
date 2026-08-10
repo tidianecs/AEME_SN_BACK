@@ -12,7 +12,10 @@ public interface ProfilUtilisateurRepository extends JpaRepository<ProfilUtilisa
 
     Optional<ProfilUtilisateur> findByKeycloakId(UUID keycloakId);
 
+    Optional<ProfilUtilisateur> findByEmailIgnoreCase(String email);
     Optional<ProfilUtilisateur> findByEmail(String email);
+
+    boolean existsByRoleAndMinistereIdAndActifTrue(com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur role, Long ministereId);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"ministere", "structure", "structure.ministereV2", "cohorte"})
     org.springframework.data.domain.Page<ProfilUtilisateur> findAll(org.springframework.data.domain.Pageable pageable);
