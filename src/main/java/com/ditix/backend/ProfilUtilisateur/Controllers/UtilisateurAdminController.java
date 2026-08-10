@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 @RestController
 @RequestMapping("/api/v2/admin/utilisateurs")
@@ -31,9 +32,10 @@ public class UtilisateurAdminController {
 
     @PostMapping
     public ResponseEntity<CreationUtilisateurResponse> creerUtilisateur(
-            @Valid @RequestBody CreerUtilisateurRequest request) {
+            @Valid @RequestBody CreerUtilisateurRequest request,
+            JwtAuthenticationToken authentication) {
 
-        ProfilUtilisateur adminCourant = profilUtilisateurCourantService.obtenirProfilCourant(null);
+        ProfilUtilisateur adminCourant = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
         if (adminCourant.getRole() != RoleUtilisateur.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé. Rôle métier ADMIN requis.");
         }
