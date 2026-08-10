@@ -133,32 +133,32 @@ public class ChatWebSocketChannelInterceptorTest {
 
     // CONNECT
 
-    @Tes
+    @Test
     void connect_withoutAuthorization_shouldBeRejected() {
         Message<?> message = createMessage(StompCommand.CONNECT);
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void connect_withMalformedAuthorization_shouldBeRejected() {
         Message<?> message = createMessageWithHeader(StompCommand.CONNECT, "Authorization", "Basic token");
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void connect_withEmptyBearerToken_shouldBeRejected() {
         Message<?> message = createMessageWithHeader(StompCommand.CONNECT, "Authorization", "Bearer ");
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void connect_withInvalidToken_shouldBeRejected() {
         Message<?> message = createMessageWithHeader(StompCommand.CONNECT, "Authorization", "Bearer invalid");
         when(jwtDecoder.decode("invalid")).thenThrow(new RuntimeException("Invalid"));
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void connect_withValidToken_shouldSetJwtPrincipal() {
         Message<?> message = createMessageWithHeader(StompCommand.CONNECT, "Authorization", "Bearer valid");
         Jwt jwt = Jwt.withTokenValue("valid").header("alg", "none").claim("sub", "11111111-1111-1111-1111-111111111111").build();
@@ -172,7 +172,7 @@ public class ChatWebSocketChannelInterceptorTest {
         assertEquals("11111111-1111-1111-1111-111111111111", ((JwtAuthenticationToken) accessor.getUser()).getToken().getSubject());
     }
 
-    @Tes
+    @Test
     void connect_withMissingSubject_shouldBeRejected() {
         Message<?> message = createMessageWithHeader(StompCommand.CONNECT, "Authorization", "Bearer valid");
         Jwt jwt = Jwt.withTokenValue("valid").header("alg", "none").claim("other", "value").build();
@@ -183,13 +183,13 @@ public class ChatWebSocketChannelInterceptorTest {
 
     // SUBSCRIBE
 
-    @Tes
+    @Test
     void subscribe_withoutPrincipal_shouldBeRejected() {
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.1", null);
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void subscribe_participant_shouldBeAllowed() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.1", auth);
@@ -200,7 +200,7 @@ public class ChatWebSocketChannelInterceptorTest {
         verify(chatService).canAccessConversation(1L, "11111111-1111-1111-1111-111111111111");
     }
 
-    @Tes
+    @Test
     void subscribe_nonParticipant_shouldBeRejected() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.1", auth);
@@ -210,7 +210,7 @@ public class ChatWebSocketChannelInterceptorTest {
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void subscribe_missingConversation_shouldBeRejected() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.99", auth);
@@ -220,20 +220,20 @@ public class ChatWebSocketChannelInterceptorTest {
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void subscribe_malformedConversationDestination_shouldBeRejected() {
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.abc", null);
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void subscribe_unrelatedAuthenticatedDestination_shouldBeAllowed() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/other.topic", auth);
         assertDoesNotThrow(() -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void subscribe_withConversationIdAboveLongMax_shouldBeRejected() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.999999999999999999999999999999999999", auth);
@@ -241,7 +241,7 @@ public class ChatWebSocketChannelInterceptorTest {
         verify(chatService, never()).canAccessConversation(anyLong(), anyString());
     }
 
-    @Tes
+    @Test
     void subscribe_withNullDestination_shouldPassThrough() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, null, auth);
@@ -249,7 +249,7 @@ public class ChatWebSocketChannelInterceptorTest {
         verify(chatService, never()).canAccessConversation(anyLong(), anyString());
     }
 
-    @Tes
+    @Test
     void subscribe_withConversationSuffix_shouldBeRejected() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         Message<?> message = createMessageWithDestination(StompCommand.SUBSCRIBE, "/topic/conversation.1/extra", auth);
@@ -259,25 +259,25 @@ public class ChatWebSocketChannelInterceptorTest {
 
     // SEND
 
-    @Tes
+    @Test
     void send_directlyToConversationTopic_shouldBeRejected() {
         Message<?> message = createMessageWithDestination(StompCommand.SEND, "/topic/conversation.1", null);
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void send_toMalformedConversationTopic_shouldBeRejected() {
         Message<?> message = createMessageWithDestination(StompCommand.SEND, "/topic/conversation.abc", null);
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void send_toApplicationChatDestination_shouldBeAllowed() {
         Message<?> message = createMessageWithDestination(StompCommand.SEND, "/app/chat.send", null);
         assertDoesNotThrow(() -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void send_directlyToConversationTopicWithSuffix_shouldBeRejected() {
         Message<?> message = createMessageWithDestination(StompCommand.SEND, "/topic/conversation.1/extra", null);
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message, messageChannel));
@@ -286,13 +286,13 @@ public class ChatWebSocketChannelInterceptorTest {
 
     // AUTRES COMMANDES
 
-    @Tes
+    @Test
     void disconnect_shouldPassThrough() {
         Message<?> message = createMessage(StompCommand.DISCONNECT);
         assertDoesNotThrow(() -> interceptor.preSend(message, messageChannel));
     }
 
-    @Tes
+    @Test
     void nullCommand_shouldPassThrough() {
         org.springframework.messaging.support.MessageHeaderAccessor accessor = new org.springframework.messaging.support.MessageHeaderAccessor();
         Message<?> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());

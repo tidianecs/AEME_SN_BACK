@@ -101,7 +101,7 @@ public class ChatRESTControllerSecurityTest {
     @MockBean
     private AuthService authService;
 
-    @Tes
+    @Test
     void getCounterpart_withoutAuthentication_shouldReturn401() throws Exception {
         mockMvc.perform(get("/api/v1/chat/conversations/1/counterpart"))
                 .andExpect(status().isUnauthorized());
@@ -110,7 +110,7 @@ public class ChatRESTControllerSecurityTest {
         verify(authService, never()).getUserById(anyString());
     }
 
-    @Tes
+    @Test
     void getCounterpart_participantShouldReturnMinimalProfile() throws Exception {
         when(chatService.getCounterpartUserId(1L, "11111111-1111-1111-1111-111111111111")).thenReturn("11111111-1111-1111-1111-111111111111");
         when(authService.getUserById("11111111-1111-1111-1111-111111111111")).thenReturn(Map.of(
@@ -136,7 +136,7 @@ public class ChatRESTControllerSecurityTest {
         verify(authService, times(1)).getUserById("11111111-1111-1111-1111-111111111111");
     }
 
-    @Tes
+    @Test
     void getCounterpart_nonParticipant_shouldReturn403() throws Exception {
         when(chatService.getCounterpartUserId(1L, "11111111-1111-1111-1111-111111111111"))
                 .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
@@ -150,7 +150,7 @@ public class ChatRESTControllerSecurityTest {
         verify(authService, never()).getUserById(anyString());
     }
 
-    @Tes
+    @Test
     void getCounterpart_missingConversation_shouldReturn403() throws Exception {
         when(chatService.getCounterpartUserId(1L, "11111111-1111-1111-1111-111111111111"))
                 .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
@@ -164,7 +164,7 @@ public class ChatRESTControllerSecurityTest {
         verify(authService, never()).getUserById(anyString());
     }
 
-    @Tes
+    @Test
     void getCounterpart_adminNonParticipant_shouldReturn403() throws Exception {
         when(chatService.getCounterpartUserId(1L, "00000000-0000-0000-0000-000000000001"))
                 .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
@@ -178,7 +178,7 @@ public class ChatRESTControllerSecurityTest {
         verify(authService, never()).getUserById(anyString());
     }
 
-    @Tes
+    @Test
     void getCounterpart_missingKeycloakUser_shouldReturn404() throws Exception {
         when(chatService.getCounterpartUserId(1L, "11111111-1111-1111-1111-111111111111")).thenReturn("11111111-1111-1111-1111-111111111111");
         when(authService.getUserById("11111111-1111-1111-1111-111111111111"))
@@ -191,7 +191,7 @@ public class ChatRESTControllerSecurityTest {
                 .andExpect(status().isNotFound());
     }
 
-    @Tes
+    @Test
     void getCounterpart_blankSubject_shouldReturn403() throws Exception {
         // Jwt subject with blank values might be rejected by the builder or handled by our logic.
         mockMvc.perform(get("/api/v1/chat/conversations/1/counterpart")
@@ -203,7 +203,7 @@ public class ChatRESTControllerSecurityTest {
         verify(chatService, never()).getCounterpartUserId(anyLong(), anyString());
         verify(authService, never()).getUserById(anyString());
     }
-    @Tes
+    @Test
     void getMessages_missingConversation_shouldReturn404() throws Exception {
         when(chatService.getMessages(1L, "11111111-1111-1111-1111-111111111111"))
                 .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation introuvable"));
@@ -215,7 +215,7 @@ public class ChatRESTControllerSecurityTest {
                 .andExpect(status().isNotFound());
     }
 
-    @Tes
+    @Test
     void getMessages_nonParticipant_shouldReturn403() throws Exception {
         when(chatService.getMessages(1L, "11111111-1111-1111-1111-111111111111"))
                 .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"));
@@ -227,7 +227,7 @@ public class ChatRESTControllerSecurityTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Tes
+    @Test
     void deleteConversation_nonParticipant_shouldReturn403() throws Exception {
         doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé"))
                 .when(chatService).deleteConversation(1L, "11111111-1111-1111-1111-111111111111");

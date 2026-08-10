@@ -98,14 +98,14 @@ public class ChatGroupMembershipSyncSecurityTest {
     @MockBean
     private ChatGroupMembershipSyncService syncService;
 
-    @Tes
+    @Test
     void testSyncGroup_NoToken_Returns401() throws Exception {
         mockMvc.perform(post("/api/v1/admin/chat/groups/1/sync-members")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
-    @Tes
+    @Test
     @WithMockUser(roles = "user")
     void testSyncGroup_StandardUser_Returns403() throws Exception {
         mockMvc.perform(post("/api/v1/admin/chat/groups/1/sync-members")
@@ -116,7 +116,7 @@ public class ChatGroupMembershipSyncSecurityTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Tes
+    @Test
     @WithMockUser(roles = "admin")
     void testSyncGroup_AdminUser_Returns200() throws Exception {
         when(syncService.syncGroup(anyLong())).thenReturn(new ChatGroupSyncReport());
@@ -129,7 +129,7 @@ public class ChatGroupMembershipSyncSecurityTest {
                 .andExpect(status().isOk());
     }
 
-    @Tes
+    @Test
     @WithMockUser(roles = "admin")
     void testSyncAllGroups_AdminUser_Returns200() throws Exception {
         when(syncService.syncAllActiveManagedGroups()).thenReturn(List.of());
