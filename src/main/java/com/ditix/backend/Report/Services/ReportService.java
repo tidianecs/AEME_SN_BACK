@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.ditix.backend.Report.DTO.ReportResponseDTO;
 import com.ditix.backend.Report.Model.Report;
 import com.ditix.backend.Report.Repository.ReportRepository;
+import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -72,12 +73,14 @@ public class ReportService {
             String recommandations,
             MultipartFile illustrations,
             MultipartFile autresDocuments,
-            String userId
+            ProfilUtilisateur profilUtilisateur
     ) throws IOException {
 
         String illustrationsPath              = saveFile(illustrations);
         String autresDocumentsPath            = saveFile(autresDocuments);
         String pieceJustificativeModPath      = saveFile(pieceJustificativeModification);
+
+        String userId = profilUtilisateur.getKeycloakId().toString();
 
         Report report = Report.builder()
                 .createdByUserId(userId)
@@ -118,7 +121,10 @@ public class ReportService {
                 .autresDocumentsPath(autresDocumentsPath)
                 .autresDocumentsName(autresDocuments != null && !autresDocuments.isEmpty()
                         ? autresDocuments.getOriginalFilename() : null)
+                .profilUtilisateur(profilUtilisateur)
                 .build();
+
+        report.setReportStatus(ReportStatus.SUBMITTED);
 
         return new ReportResponseDTO(reportRepository.save(report));
     }

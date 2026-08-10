@@ -18,6 +18,10 @@ public class Report {
     @Column(nullable = false)
     private String createdByUserId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profil_utilisateur_id")
+    private com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profilUtilisateur;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -110,6 +114,7 @@ public class Report {
     public static class Builder {
         private final Report report = new Report();
 
+        public Builder profilUtilisateur(com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profilUtilisateur) { report.profilUtilisateur = profilUtilisateur; return this; }
         public Builder reportDate(LocalDateTime date) { report.reportDate = date; return this; }
         public Builder createdByUserId(String userId) { report.createdByUserId = userId; return this; }
         public Builder nomGestionnaire(String nom) { report.nomGestionnaire = nom; return this; }
@@ -153,6 +158,8 @@ public class Report {
     public void setReportStatus(ReportStatus reportStatus) { this.reportStatus = reportStatus; }
     public String getCreatedByUserId() { return createdByUserId; }
     public void setCreatedByUserId(String createdByUserId) { this.createdByUserId = createdByUserId; }
+    public com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur getProfilUtilisateur() { return profilUtilisateur; }
+    public void setProfilUtilisateur(com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profilUtilisateur) { this.profilUtilisateur = profilUtilisateur; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public LocalDateTime getReportDate() { return reportDate; }

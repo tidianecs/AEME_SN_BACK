@@ -19,15 +19,19 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
+import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
 
 @RestController
 @RequestMapping("/api/v1/reports")
 public class ReportController {
 
     private final ReportService reportService;
+    private final ProfilUtilisateurCourantService profilUtilisateurCourantService;
 
-    public ReportController(ReportService reportService) {
+    public ReportController(ReportService reportService, ProfilUtilisateurCourantService profilUtilisateurCourantService) {
         this.reportService = reportService;
+        this.profilUtilisateurCourantService = profilUtilisateurCourantService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -64,7 +68,8 @@ public class ReportController {
             @RequestParam(value = "autresDocuments",               required = false) MultipartFile autresDocuments,
             JwtAuthenticationToken authentication
     ) throws IOException {
-        String userId = authentication.getToken().getSubject();
+        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+
         ReportResponseDTO response = reportService.createReport(
                 LocalDateTime.parse(reportDate),
                 nomGestionnaire, serviceAppartenance, nombreBatiments, numeroPoliceSenelec,
@@ -81,7 +86,7 @@ public class ReportController {
                 plateformeDigitale, suiviPlateformeDigitale,
                 autresActivites, autreActivitePrecision,
                 contraintes, recommandations,
-                illustrations, autresDocuments, userId
+                illustrations, autresDocuments, profil
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
