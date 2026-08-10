@@ -112,7 +112,7 @@ public class ChatWSControllerTest {
         return auth;
     }
 
-    @Tes
+    @Test
     void participant_shouldSaveAndBroadcastMessage() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
@@ -130,7 +130,7 @@ public class ChatWSControllerTest {
         verify(messagingTemplate, times(1)).convertAndSend("/topic/conversation.1", mockMessageDTO);
     }
 
-    @Tes
+    @Test
     void nonParticipant_shouldThrowAccessDenied() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
@@ -145,7 +145,7 @@ public class ChatWSControllerTest {
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
-    @Tes
+    @Test
     void missingPrincipal_shouldBeRejected() {
         SendMessageRequest request = new SendMessageRequest();
 
@@ -155,7 +155,7 @@ public class ChatWSControllerTest {
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
-    @Tes
+    @Test
     void missingConversationId_shouldBeRejected() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
@@ -167,7 +167,7 @@ public class ChatWSControllerTest {
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
-    @Tes
+    @Test
     void spoofedSenderId_shouldBeOverwrittenByJwtSubject() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
@@ -183,7 +183,7 @@ public class ChatWSControllerTest {
         verify(chatService, times(1)).saveMessage(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello");
     }
 
-    @Tes
+    @Test
     void testSenderFullNameFallbacks() {
         // Fallback 2: given_name + family_name
         JwtAuthenticationToken auth2 = createMockAuth("11111111-1111-1111-1111-111111111111", Map.of("given_name", "Jane", "family_name", "Doe"));
@@ -216,7 +216,7 @@ public class ChatWSControllerTest {
         verify(chatService, times(1)).saveMessage(4L, "11111111-1111-1111-1111-111111111111", "Utilisateur", "Test");
     }
 
-    @Tes
+    @Test
     void nonexistentConversation_shouldBeRejected() {
         JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();

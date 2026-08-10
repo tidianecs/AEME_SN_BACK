@@ -113,7 +113,7 @@ public class ManagedChatGroupRESTControllerSecurityTest {
         return conv;
     }
 
-    @Tes
+    @Test
     void createGlobal_standardUser_shouldReturn403() throws Exception {
         mockMvc.perform(post("/api/v1/admin/chat/groups/global")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -126,7 +126,7 @@ public class ManagedChatGroupRESTControllerSecurityTest {
         verify(managedChatGroupService, never()).createOrGetGlobalGroup(anyString(), anyString());
     }
 
-    @Tes
+    @Test
     void createGlobal_adminUser_shouldReturn201() throws Exception {
         when(managedChatGroupService.createOrGetGlobalGroup(eq("Global"), eq("00000000-0000-0000-0000-000000000001")))
                 .thenReturn(createMockGroup(1L, ConversationType.GLOBAL, "GLOBAL"));
@@ -141,7 +141,7 @@ public class ManagedChatGroupRESTControllerSecurityTest {
                 .andExpect(jsonPath("$.type").value("GLOBAL"));
     }
 
-    @Tes
+    @Test
     void createCohort_adminUser_shouldReturn201() throws Exception {
         when(managedChatGroupService.createOrGetCohortGroup(eq("ref1"), eq("Cohort"), eq("00000000-0000-0000-0000-000000000001")))
                 .thenReturn(createMockGroup(2L, ConversationType.COHORT, "ref1"));
@@ -157,7 +157,7 @@ public class ManagedChatGroupRESTControllerSecurityTest {
                 .andExpect(jsonPath("$.referenceId").value("ref1"));
     }
 
-    @Tes
+    @Test
     void listGroups_adminUser_shouldReturn200() throws Exception {
         when(managedChatGroupService.listManagedGroups())
                 .thenReturn(List.of(createMockGroup(1L, ConversationType.GLOBAL, "GLOBAL")));
@@ -170,7 +170,7 @@ public class ManagedChatGroupRESTControllerSecurityTest {
                 .andExpect(jsonPath("$.length()").value(1));
     }
 
-    @Tes
+    @Test
     @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "admin")
     public void testCreateGlobalGroup_IgnoresCreatedByUserIdInJson() throws Exception {
         when(managedChatGroupService.createOrGetGlobalGroup(eq("Global Admin"), anyString()))

@@ -17,7 +17,7 @@ import java.security.Principal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Componen
+@Component
 public class ChatWebSocketChannelInterceptor implements ChannelInterceptor {
 
     private final JwtDecoder jwtDecoder;
