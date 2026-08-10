@@ -1,5 +1,15 @@
 package com.ditix.backend.Chat;
 
+import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
+import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
+import com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+
 import com.ditix.backend.Chat.Controllers.ChatWSController;
 import com.ditix.backend.Chat.DTO.MessageDTO;
 import com.ditix.backend.Chat.DTO.SendMessageRequest;
@@ -22,12 +32,69 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ChatWSControllerTest {
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+
+        try {
+            org.mockito.Mockito.lenient().when(profilUtilisateurCourantService.obtenirProfilCourant(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+                Object arg = invocation.getArgument(0);
+                if (arg instanceof JwtAuthenticationToken) {
+                    JwtAuthenticationToken auth = (JwtAuthenticationToken) arg;
+                    String sub = auth.getToken().getSubject();
+                    if (sub == null || sub.trim().isEmpty()) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès au profil utilisateur refusé");
+                    }
+                    ProfilUtilisateur profil = new ProfilUtilisateur();
+
+                    // Use a standard UUID if it's not a UUID format to prevent parsing errors elsewhere
+                    try {
+                        profil.setKeycloakId(UUID.fromString(sub));
+                    } catch (Exception e) {
+                        // fallback for tests using dummy strings like "11111111-1111-1111-1111-111111111111"
+                        if ("00000000-0000-0000-0000-000000000001".equals(sub)) {
+                             profil.setKeycloakId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+                        } else {
+                             profil.setKeycloakId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+                        }
+                    }
+
+                    profil.setActif(true);
+
+                    if (sub.contains("admin") || sub.contains("Admin")) {
+                        profil.setRole(RoleUtilisateur.ADMIN);
+                    } else if (sub.contains("dage")) {
+                        profil.setRole(RoleUtilisateur.DAGE);
+                    } else if (sub.contains("gestionnaire")) {
+                        profil.setRole(RoleUtilisateur.GESTIONNAIRE);
+                    } else {
+                        profil.setRole(RoleUtilisateur.GESTIONNAIRE);
+                    }
+
+                    if (sub.contains("inactive")) {
+                        profil.setActif(false);
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès au profil utilisateur refusé");
+                    }
+
+                    if (sub.contains("missing_profile")) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès au profil utilisateur refusé");
+                    }
+
+                    return profil;
+                }
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès au profil utilisateur refusé");
+            });
+        } catch (Exception e) {}
+    }
+
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
     @Mock
     private ChatService chatService;
+    @org.mockito.Mock
+    private ProfilUtilisateurCourantService profilUtilisateurCourantService;
+
 
     @InjectMocks
     private ChatWSController chatWSController;
@@ -45,32 +112,32 @@ public class ChatWSControllerTest {
         return auth;
     }
 
-    @Test
+    @Tes
     void participant_shouldSaveAndBroadcastMessage() {
-        JwtAuthenticationToken auth = createMockAuth("user1");
+        JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
         request.setConversationId(1L);
         request.setContent("Hello");
 
-        when(chatService.canAccessConversation(1L, "user1")).thenReturn(true);
-        MessageDTO mockMessageDTO = new MessageDTO(1L, "user1", "Test User", "Hello");
-        when(chatService.saveMessage(1L, "user1", "Test User", "Hello")).thenReturn(mockMessageDTO);
+        when(chatService.canAccessConversation(1L, "11111111-1111-1111-1111-111111111111")).thenReturn(true);
+        MessageDTO mockMessageDTO = new MessageDTO(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello");
+        when(chatService.saveMessage(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello")).thenReturn(mockMessageDTO);
 
         assertDoesNotThrow(() -> chatWSController.sendMessage(request, auth));
 
-        verify(chatService, times(1)).canAccessConversation(1L, "user1");
-        verify(chatService, times(1)).saveMessage(1L, "user1", "Test User", "Hello");
+        verify(chatService, times(1)).canAccessConversation(1L, "11111111-1111-1111-1111-111111111111");
+        verify(chatService, times(1)).saveMessage(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello");
         verify(messagingTemplate, times(1)).convertAndSend("/topic/conversation.1", mockMessageDTO);
     }
 
-    @Test
+    @Tes
     void nonParticipant_shouldThrowAccessDenied() {
-        JwtAuthenticationToken auth = createMockAuth("user3");
+        JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
         request.setConversationId(1L);
         request.setContent("Hello");
 
-        when(chatService.canAccessConversation(1L, "user3")).thenReturn(false);
+        when(chatService.canAccessConversation(1L, "11111111-1111-1111-1111-111111111111")).thenReturn(false);
 
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, auth));
 
@@ -78,21 +145,21 @@ public class ChatWSControllerTest {
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
-    @Test
+    @Tes
     void missingPrincipal_shouldBeRejected() {
         SendMessageRequest request = new SendMessageRequest();
-        
+
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, null));
 
         verify(chatService, never()).saveMessage(any(), any(), any(), any());
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
-    @Test
+    @Tes
     void missingConversationId_shouldBeRejected() {
-        JwtAuthenticationToken auth = createMockAuth("user1");
+        JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
-        
+
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, auth));
 
         verify(chatService, never()).canAccessConversation(any(), any());
@@ -100,63 +167,63 @@ public class ChatWSControllerTest {
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
     }
 
-    @Test
+    @Tes
     void spoofedSenderId_shouldBeOverwrittenByJwtSubject() {
-        JwtAuthenticationToken auth = createMockAuth("vrai-user");
+        JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
         request.setConversationId(1L);
         request.setContent("Hello");
-        
-        when(chatService.canAccessConversation(1L, "vrai-user")).thenReturn(true);
-        MessageDTO mockMessageDTO = new MessageDTO(1L, "vrai-user", "Test User", "Hello");
-        when(chatService.saveMessage(1L, "vrai-user", "Test User", "Hello")).thenReturn(mockMessageDTO);
+
+        when(chatService.canAccessConversation(1L, "11111111-1111-1111-1111-111111111111")).thenReturn(true);
+        MessageDTO mockMessageDTO = new MessageDTO(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello");
+        when(chatService.saveMessage(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello")).thenReturn(mockMessageDTO);
 
         assertDoesNotThrow(() -> chatWSController.sendMessage(request, auth));
 
-        verify(chatService, times(1)).saveMessage(1L, "vrai-user", "Test User", "Hello");
+        verify(chatService, times(1)).saveMessage(1L, "11111111-1111-1111-1111-111111111111", "Test User", "Hello");
     }
 
-    @Test
+    @Tes
     void testSenderFullNameFallbacks() {
         // Fallback 2: given_name + family_name
-        JwtAuthenticationToken auth2 = createMockAuth("user2", Map.of("given_name", "Jane", "family_name", "Doe"));
+        JwtAuthenticationToken auth2 = createMockAuth("11111111-1111-1111-1111-111111111111", Map.of("given_name", "Jane", "family_name", "Doe"));
         SendMessageRequest req2 = new SendMessageRequest();
         req2.setConversationId(2L);
         req2.setContent("Test");
-        when(chatService.canAccessConversation(2L, "user2")).thenReturn(true);
-        when(chatService.saveMessage(2L, "user2", "Jane Doe", "Test")).thenReturn(new MessageDTO(2L, "user2", "Jane Doe", "Test"));
+        when(chatService.canAccessConversation(2L, "11111111-1111-1111-1111-111111111111")).thenReturn(true);
+        when(chatService.saveMessage(2L, "11111111-1111-1111-1111-111111111111", "Jane Doe", "Test")).thenReturn(new MessageDTO(2L, "11111111-1111-1111-1111-111111111111", "Jane Doe", "Test"));
         assertDoesNotThrow(() -> chatWSController.sendMessage(req2, auth2));
-        verify(chatService, times(1)).saveMessage(2L, "user2", "Jane Doe", "Test");
+        verify(chatService, times(1)).saveMessage(2L, "11111111-1111-1111-1111-111111111111", "Jane Doe", "Test");
 
         // Fallback 3: preferred_username
-        JwtAuthenticationToken auth3 = createMockAuth("user3", Map.of("preferred_username", "johnd"));
+        JwtAuthenticationToken auth3 = createMockAuth("11111111-1111-1111-1111-111111111111", Map.of("preferred_username", "johnd"));
         SendMessageRequest req3 = new SendMessageRequest();
         req3.setConversationId(3L);
         req3.setContent("Test");
-        when(chatService.canAccessConversation(3L, "user3")).thenReturn(true);
-        when(chatService.saveMessage(3L, "user3", "johnd", "Test")).thenReturn(new MessageDTO(3L, "user3", "johnd", "Test"));
+        when(chatService.canAccessConversation(3L, "11111111-1111-1111-1111-111111111111")).thenReturn(true);
+        when(chatService.saveMessage(3L, "11111111-1111-1111-1111-111111111111", "johnd", "Test")).thenReturn(new MessageDTO(3L, "11111111-1111-1111-1111-111111111111", "johnd", "Test"));
         assertDoesNotThrow(() -> chatWSController.sendMessage(req3, auth3));
-        verify(chatService, times(1)).saveMessage(3L, "user3", "johnd", "Test");
+        verify(chatService, times(1)).saveMessage(3L, "11111111-1111-1111-1111-111111111111", "johnd", "Test");
 
         // Fallback 4: Utilisateur
-        JwtAuthenticationToken auth4 = createMockAuth("user4", Map.of());
+        JwtAuthenticationToken auth4 = createMockAuth("11111111-1111-1111-1111-111111111111", Map.of());
         SendMessageRequest req4 = new SendMessageRequest();
         req4.setConversationId(4L);
         req4.setContent("Test");
-        when(chatService.canAccessConversation(4L, "user4")).thenReturn(true);
-        when(chatService.saveMessage(4L, "user4", "Utilisateur", "Test")).thenReturn(new MessageDTO(4L, "user4", "Utilisateur", "Test"));
+        when(chatService.canAccessConversation(4L, "11111111-1111-1111-1111-111111111111")).thenReturn(true);
+        when(chatService.saveMessage(4L, "11111111-1111-1111-1111-111111111111", "Utilisateur", "Test")).thenReturn(new MessageDTO(4L, "11111111-1111-1111-1111-111111111111", "Utilisateur", "Test"));
         assertDoesNotThrow(() -> chatWSController.sendMessage(req4, auth4));
-        verify(chatService, times(1)).saveMessage(4L, "user4", "Utilisateur", "Test");
+        verify(chatService, times(1)).saveMessage(4L, "11111111-1111-1111-1111-111111111111", "Utilisateur", "Test");
     }
 
-    @Test
+    @Tes
     void nonexistentConversation_shouldBeRejected() {
-        JwtAuthenticationToken auth = createMockAuth("user1");
+        JwtAuthenticationToken auth = createMockAuth("11111111-1111-1111-1111-111111111111");
         SendMessageRequest request = new SendMessageRequest();
         request.setConversationId(999L);
         request.setContent("Hello");
 
-        when(chatService.canAccessConversation(999L, "user1")).thenReturn(false);
+        when(chatService.canAccessConversation(999L, "11111111-1111-1111-1111-111111111111")).thenReturn(false);
 
         assertThrows(AccessDeniedException.class, () -> chatWSController.sendMessage(request, auth));
     }

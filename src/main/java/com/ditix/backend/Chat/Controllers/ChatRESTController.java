@@ -15,10 +15,12 @@ public class ChatRESTController {
 
     private final ChatService chatService;
     private final com.ditix.backend.Auth.Services.AuthService authService;
+    private final com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService;
 
-    public ChatRESTController(ChatService chatService, com.ditix.backend.Auth.Services.AuthService authService) {
+    public ChatRESTController(ChatService chatService, com.ditix.backend.Auth.Services.AuthService authService, com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService) {
         this.chatService = chatService;
         this.authService = authService;
+        this.profilUtilisateurCourantService = profilUtilisateurCourantService;
     }
 
     // Créer ou récupérer une conversation avec un autre user
@@ -27,7 +29,7 @@ public class ChatRESTController {
             @RequestBody Map<String, String> body,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        String userId = profilUtilisateurCourantService.obtenirProfilCourant(authentication).getKeycloakId().toString();
         String otherUserId = body.get("otherUserId");
         return ResponseEntity.ok(chatService.getOrCreateConversation(userId, otherUserId));
     }
@@ -37,7 +39,7 @@ public class ChatRESTController {
     public ResponseEntity<List<Conversation>> getMyConversations(
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        String userId = profilUtilisateurCourantService.obtenirProfilCourant(authentication).getKeycloakId().toString();
         return ResponseEntity.ok(chatService.getMyConversations(userId));
     }
 
@@ -47,7 +49,7 @@ public class ChatRESTController {
             @PathVariable Long conversationId,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        String userId = profilUtilisateurCourantService.obtenirProfilCourant(authentication).getKeycloakId().toString();
         return ResponseEntity.ok(chatService.getMessages(conversationId, userId));
     }
 
@@ -56,7 +58,7 @@ public class ChatRESTController {
             @PathVariable Long id,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        String userId = profilUtilisateurCourantService.obtenirProfilCourant(authentication).getKeycloakId().toString();
         chatService.deleteConversation(id, userId);
         return ResponseEntity.ok(Map.of("message", "Conversation supprimée"));
     }
@@ -66,11 +68,7 @@ public class ChatRESTController {
             @PathVariable Long conversationId,
             JwtAuthenticationToken authentication
     ) {
-        if (authentication == null || authentication.getToken() == null || authentication.getToken().getSubject() == null || authentication.getToken().getSubject().trim().isEmpty()) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Unauthorized");
-        }
-
-        String requesterUserId = authentication.getToken().getSubject();
+        String requesterUserId = profilUtilisateurCourantService.obtenirProfilCourant(authentication).getKeycloakId().toString();
         String counterpartId = chatService.getCounterpartUserId(conversationId, requesterUserId);
 
         try {

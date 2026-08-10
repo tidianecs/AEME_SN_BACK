@@ -17,17 +17,19 @@ import java.security.Principal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
+@Componen
 public class ChatWebSocketChannelInterceptor implements ChannelInterceptor {
 
     private final JwtDecoder jwtDecoder;
     private final ChatService chatService;
+    private final com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService;
     private static final Pattern CONVERSATION_TOPIC_PATTERN = Pattern.compile("^/topic/conversation\\.(\\d+)$");
     private static final String CONVERSATION_PREFIX = "/topic/conversation.";
 
-    public ChatWebSocketChannelInterceptor(JwtDecoder jwtDecoder, ChatService chatService) {
+    public ChatWebSocketChannelInterceptor(JwtDecoder jwtDecoder, ChatService chatService, com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService) {
         this.jwtDecoder = jwtDecoder;
         this.chatService = chatService;
+        this.profilUtilisateurCourantService = profilUtilisateurCourantService;
     }
 
     @Override
@@ -67,7 +69,7 @@ public class ChatWebSocketChannelInterceptor implements ChannelInterceptor {
         if (!authHeader.startsWith("Bearer ")) {
             throw new AccessDeniedException("Invalid authentication token");
         }
-        
+
         String token = authHeader.substring(7);
         if (token.trim().isEmpty()) {
             throw new AccessDeniedException("Invalid authentication token");
@@ -80,6 +82,10 @@ public class ChatWebSocketChannelInterceptor implements ChannelInterceptor {
                 throw new AccessDeniedException("Invalid authentication token");
             }
             JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt);
+
+            // Check postgres profile
+            profilUtilisateurCourantService.obtenirProfilCourant(auth);
+
             accessor.setUser(auth);
         } catch (Exception e) {
             throw new AccessDeniedException("Invalid authentication token");
@@ -104,8 +110,16 @@ public class ChatWebSocketChannelInterceptor implements ChannelInterceptor {
             }
 
             JwtAuthenticationToken auth = (JwtAuthenticationToken) principal;
-            String userId = auth.getToken().getSubject();
-            
+
+            com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil;
+            try {
+                profil = profilUtilisateurCourantService.obtenirProfilCourant(auth);
+            } catch (Exception e) {
+                throw new AccessDeniedException("Access denied");
+            }
+
+            String userId = profil.getKeycloakId().toString();
+
             try {
                 Long conversationId = Long.parseLong(matcher.group(1));
                 if (!chatService.canAccessConversation(conversationId, userId)) {
