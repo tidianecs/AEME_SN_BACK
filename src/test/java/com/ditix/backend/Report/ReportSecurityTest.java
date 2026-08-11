@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ReportController.class)
@@ -128,13 +129,16 @@ public class ReportSecurityTest {
 
     @Test
     void getMyReports_withRoleUser_shouldBeAllowed() throws Exception {
+        com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
+        profil.setKeycloakId(java.util.UUID.randomUUID());
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any())).thenReturn(profil);
         when(reportService.getMyReports(anyString())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/reports")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
                 .andExpect(status().isOk());
 
-        verify(reportService, times(1)).getMyReports(anyString());
+        verify(reportService, times(1)).getMyReports(profil.getKeycloakId().toString());
     }
 
     @Test
