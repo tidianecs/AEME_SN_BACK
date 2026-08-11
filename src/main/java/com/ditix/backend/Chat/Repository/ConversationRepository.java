@@ -42,6 +42,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
                    "created_at, type, name, reference_id, created_by_user_id, system_managed, active, updated_at" +
                    ") VALUES (" +
                    "CURRENT_TIMESTAMP, :type, :name, :referenceId, :createdByUserId, TRUE, TRUE, CURRENT_TIMESTAMP" +
-                   ") ON CONFLICT (type, reference_id) WHERE active = true AND type IN ('COHORT', 'STRUCTURE') AND reference_id IS NOT NULL DO NOTHING RETURNING id", nativeQuery = true)
-    Long insertCohortOrStructureGroupAtomically(String type, String name, String referenceId, String createdByUserId);
+                   ") ON CONFLICT (type, reference_id) WHERE active = true AND type IN ('COHORT', 'STRUCTURE', 'MINISTERE') AND reference_id IS NOT NULL DO NOTHING RETURNING id", nativeQuery = true)
+    Long insertCohortStructureOrMinistereGroupAtomically(String type, String name, String referenceId, String createdByUserId);
 }

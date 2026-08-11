@@ -37,15 +37,12 @@ public class ChatGroupMembershipSyncService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Conversation is not eligible for sync");
         }
 
-        List<ChatGroupUser> allUsers = userDirectory.fetchAllEnabledUsers();
-        List<String> desiredUserIds = computeDesiredUsers(conversation, allUsers);
+        List<String> desiredUserIds = computeDesiredUsers(conversation);
 
         return applyService.applyGroupSync(conversationId, desiredUserIds);
     }
 
     public List<ChatGroupSyncReport> syncAllActiveManagedGroups() {
-        List<ChatGroupUser> allUsers = userDirectory.fetchAllEnabledUsers();
-
         List<Conversation> activeManagedGroups = conversationRepository.findAll().stream()
                 .filter(Conversation::isSystemManaged)
                 .filter(Conversation::isActive)
@@ -55,36 +52,32 @@ public class ChatGroupMembershipSyncService {
         Map<Long, List<String>> groupDesiredUsers = new HashMap<>();
 
         for (Conversation group : activeManagedGroups) {
-            List<String> desired = computeDesiredUsers(group, allUsers);
+            List<String> desired = computeDesiredUsers(group);
             groupDesiredUsers.put(group.getId(), desired);
         }
 
         return applyService.applyAllGroupsSync(groupDesiredUsers);
     }
 
-    private List<String> computeDesiredUsers(Conversation conversation, List<ChatGroupUser> allUsers) {
+    private List<String> computeDesiredUsers(Conversation conversation) {
         if (conversation.getType() == ConversationType.GLOBAL) {
-            return allUsers.stream().map(ChatGroupUser::userId).distinct().toList();
+            return userDirectory.fetchGlobalMembers();
         }
+
         String ref = conversation.getReferenceId();
         if (ref == null || ref.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Group reference ID cannot be blank");
         }
-
         String cleanRef = ref.trim();
-        List<String> desired = new ArrayList<>();
-        for (ChatGroupUser user : allUsers) {
-            if (conversation.getType() == ConversationType.COHORT) {
-                if (cleanRef.equals(user.cohorte())) {
-                    desired.add(user.userId());
-                }
-            } else if (conversation.getType() == ConversationType.STRUCTURE) {
-                if (cleanRef.equals(user.structureId())) {
-                    desired.add(user.userId());
-                }
-            }
+
+        if (conversation.getType() == ConversationType.COHORT) {
+            return userDirectory.fetchCohortMembers(cleanRef);
+        } else if (conversation.getType() == ConversationType.STRUCTURE) {
+            return userDirectory.fetchStructureMembers(cleanRef);
+        } else if (conversation.getType() == ConversationType.MINISTERE) {
+            return userDirectory.fetchMinistereMembers(cleanRef);
         }
 
-        return desired.stream().distinct().toList();
+        return List.of();
     }
 }

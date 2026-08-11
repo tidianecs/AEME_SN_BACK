@@ -60,6 +60,14 @@ public class ManagedChatGroupRESTController {
                 managedChatGroupService.createOrGetStructureGroup(request.getReferenceId(), request.getName(), extractAndVerifyAdminUserId(authentication))));
     }
 
+    @PostMapping("/ministere")
+    public ResponseEntity<ManagedChatGroupDTO> createMinistereGroup(
+            @RequestBody ManagedChatGroupRequest request,
+            JwtAuthenticationToken authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ManagedChatGroupDTO(
+                managedChatGroupService.createOrGetMinistereGroup(request.getReferenceId(), request.getName(), extractAndVerifyAdminUserId(authentication))));
+    }
+
     @GetMapping
     public ResponseEntity<List<ManagedChatGroupDTO>> listManagedGroups(JwtAuthenticationToken authentication) {
         extractAndVerifyAdminUserId(authentication);

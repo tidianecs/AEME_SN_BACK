@@ -16,9 +16,12 @@ import java.util.List;
 public class ManagedChatGroupService {
 
     private final ConversationRepository conversationRepository;
+    private final com.ditix.backend.Ministere.Repository.MinistereRepository ministereRepository;
 
-    public ManagedChatGroupService(ConversationRepository conversationRepository) {
+    public ManagedChatGroupService(ConversationRepository conversationRepository,
+                                   com.ditix.backend.Ministere.Repository.MinistereRepository ministereRepository) {
         this.conversationRepository = conversationRepository;
+        this.ministereRepository = ministereRepository;
     }
 
     @Transactional
@@ -74,13 +77,46 @@ public class ManagedChatGroupService {
                 .orElseGet(() -> createGroup(ConversationType.STRUCTURE, ref, name, creatorUserId));
     }
 
+    @Transactional
+    public Conversation createOrGetMinistereGroup(String ministereId, String name, String creatorUserId) {
+        if (ministereId == null || ministereId.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reference ID cannot be blank");
+        }
+        if (ministereId.trim().length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reference ID cannot exceed 255 characters");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot be blank");
+        }
+        if (name.trim().length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot exceed 255 characters");
+        }
+
+        String ref = ministereId.trim();
+        Long ministereIdLong;
+        try {
+            ministereIdLong = Long.parseLong(ref);
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid ministere ID format");
+        }
+
+        com.ditix.backend.Ministere.Model.Ministere ministere = ministereRepository.findById(ministereIdLong)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ministere introuvable"));
+
+        if (!Boolean.TRUE.equals(ministere.getActif())) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Impossible de créer un groupe pour un ministère inactif");
+        }
+        return conversationRepository.findByTypeAndReferenceIdAndActiveTrue(ConversationType.MINISTERE, ref)
+                .orElseGet(() -> createGroup(ConversationType.MINISTERE, ref, name, creatorUserId));
+    }
+
     private Conversation createGroup(ConversationType type, String referenceId, String name, String creatorUserId) {
         String cleanName = name.trim();
         Long id;
         if (type == ConversationType.GLOBAL) {
             id = conversationRepository.insertGlobalGroupAtomically(type.name(), cleanName, referenceId, creatorUserId);
         } else {
-            id = conversationRepository.insertCohortOrStructureGroupAtomically(type.name(), cleanName, referenceId, creatorUserId);
+            id = conversationRepository.insertCohortStructureOrMinistereGroupAtomically(type.name(), cleanName, referenceId, creatorUserId);
         }
         
         if (id == null) {
@@ -139,7 +175,7 @@ public class ManagedChatGroupService {
             if (conversationRepository.findByTypeAndActiveTrue(ConversationType.GLOBAL).isPresent()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Un groupe GLOBAL actif existe déjà");
             }
-        } else if (conv.getType() == ConversationType.COHORT || conv.getType() == ConversationType.STRUCTURE) {
+        } else if (conv.getType() == ConversationType.COHORT || conv.getType() == ConversationType.STRUCTURE || conv.getType() == ConversationType.MINISTERE) {
             if (conversationRepository.findByTypeAndReferenceIdAndActiveTrue(conv.getType(), conv.getReferenceId()).isPresent()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Un groupe actif avec cette référence existe déjà");
             }
