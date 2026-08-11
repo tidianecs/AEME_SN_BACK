@@ -22,30 +22,6 @@ public class AdminController {
         this.reportService = reportService;
     }
 
-    @PostMapping("/users")
-    public ResponseEntity<Map<String, String>> inviteUser(
-            @RequestBody Map<String, String> body
-    ) {
-        String email             = body.get("email");
-        String firstName         = body.get("firstName");
-        String lastName          = body.get("lastName");
-        String role              = body.getOrDefault("role", "user");
-        String membershipService = body.getOrDefault("membershipService", "");
-
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", "Email requis"));
-        }
-        if (!role.equals("user") && !role.equals("admin")) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", "Rôle invalide — utilise 'user' ou 'admin'"));
-        }
-
-        authService.inviteUser(email, firstName, lastName, role, membershipService);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Invitation envoyée à " + email));
-    }
-
     @GetMapping("/users")
     public ResponseEntity<Map<String, Object>> getAllUsers(
             @RequestParam(defaultValue = "0")  int first,
@@ -53,20 +29,6 @@ public class AdminController {
             @RequestParam(required = false)    String search
     ) {
         return ResponseEntity.ok(authService.getAllUsersPaginated(first, max, search));
-    }
-
-    @PatchMapping("/users/{userId}/membership")
-    public ResponseEntity<Map<String, String>> updateMembership(
-            @PathVariable String userId,
-            @RequestBody Map<String, String> body
-    ) {
-        String membershipService = body.get("membershipService");
-        if (membershipService == null || membershipService.isBlank()) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", "membershipService requis"));
-        }
-        authService.updateMembershipService(userId, membershipService);
-        return ResponseEntity.ok(Map.of("message", "Membership mis à jour"));
     }
 
     @GetMapping("/users/{userId}/reports")
@@ -90,9 +52,5 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/users/{userId}")
-    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable String userId) {
-        authService.deleteUser(userId);
-        return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé"));
-    }
+
 }

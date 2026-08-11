@@ -30,7 +30,8 @@ public class MeetingController {
             @RequestBody CreateMeetingRequest request,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        ProfilUtilisateur profil = profilService.obtenirProfilCourant(authentication);
+        String userId = profil.getKeycloakId().toString();
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(meetingService.createMeeting(request, userId));
     }
@@ -61,7 +62,8 @@ public class MeetingController {
             @RequestBody Map<String, String> body,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        ProfilUtilisateur profil = profilService.obtenirProfilCourant(authentication);
+        String userId = profil.getKeycloakId().toString();
         return ResponseEntity.ok(meetingService.updateStatus(id, body.get("status"), userId));
     }
 
@@ -71,7 +73,8 @@ public class MeetingController {
             @PathVariable Long id,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
+        ProfilUtilisateur profil = profilService.obtenirProfilCourant(authentication);
+        String userId = profil.getKeycloakId().toString();
         meetingService.deleteMeeting(id, userId);
         return ResponseEntity.ok(Map.of("message", "Meeting supprimé"));
     }
