@@ -51,6 +51,9 @@ class CreationUtilisateurOrchestratorTest {
     @Mock
     private CohorteRepository cohorteRepository;
 
+    @Mock
+    private com.ditix.backend.Chat.Services.ChatUserMembershipService chatUserMembershipService;
+
     @InjectMocks
     private CreationUtilisateurOrchestrator orchestrator;
 
@@ -353,5 +356,25 @@ class CreationUtilisateurOrchestratorTest {
         assertEquals("sec.user@aeme.sn", request.getEmailSecondaire());
         verify(profilUtilisateurRepository).findByEmailIgnoreCase("test.user@aeme.sn");
         verify(gestionCompteKeycloakService).emailExiste("test.user@aeme.sn");
+    }
+
+    @Test
+    void testChatFailureDoesNotRollback() {
+        request.setRole(RoleUtilisateur.ADMIN);
+        UUID keycloakId = UUID.randomUUID();
+        when(gestionCompteKeycloakService.creerIdentite(any(), any(), any(), eq("admin"))).thenReturn(keycloakId);
+
+        ProfilUtilisateur profil = new ProfilUtilisateur();
+        profil.setId(1L);
+        when(sauvegardeProfilService.sauvegarder(any(), any(), any(), any(), any())).thenReturn(profil);
+
+        doThrow(new RuntimeException("Simulated chat DB failure"))
+                .when(chatUserMembershipService).syncUserMemberships(profil);
+
+        CreationUtilisateurResponse response = orchestrator.creerUtilisateur(request);
+
+        assertTrue(response.isInvitationEnvoyee());
+        verify(gestionCompteKeycloakService).envoyerActionsInitiales(keycloakId);
+        verify(gestionCompteKeycloakService, never()).supprimerIdentite(keycloakId);
     }
 }

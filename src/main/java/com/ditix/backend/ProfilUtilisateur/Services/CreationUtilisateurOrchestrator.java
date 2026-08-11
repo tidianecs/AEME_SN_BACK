@@ -31,6 +31,7 @@ public class CreationUtilisateurOrchestrator {
     private final MinistereRepository ministereRepository;
     private final StructureRepository structureRepository;
     private final CohorteRepository cohorteRepository;
+    private final com.ditix.backend.Chat.Services.ChatUserMembershipService chatUserMembershipService;
 
     public CreationUtilisateurOrchestrator(
             GestionCompteKeycloakService gestionCompteKeycloakService,
@@ -38,13 +39,15 @@ public class CreationUtilisateurOrchestrator {
             ProfilUtilisateurRepository profilUtilisateurRepository,
             MinistereRepository ministereRepository,
             StructureRepository structureRepository,
-            CohorteRepository cohorteRepository) {
+            CohorteRepository cohorteRepository,
+            com.ditix.backend.Chat.Services.ChatUserMembershipService chatUserMembershipService) {
         this.gestionCompteKeycloakService = gestionCompteKeycloakService;
         this.sauvegardeProfilService = sauvegardeProfilService;
         this.profilUtilisateurRepository = profilUtilisateurRepository;
         this.ministereRepository = ministereRepository;
         this.structureRepository = structureRepository;
         this.cohorteRepository = cohorteRepository;
+        this.chatUserMembershipService = chatUserMembershipService;
     }
 
     public CreationUtilisateurResponse creerUtilisateur(CreerUtilisateurRequest request) {
@@ -125,6 +128,12 @@ public class CreationUtilisateurOrchestrator {
 
             // Sauvegarde Postgres
             profil = sauvegardeProfilService.sauvegarder(request, keycloakId, ministere, structure, cohorte);
+
+            try {
+                chatUserMembershipService.syncUserMemberships(profil);
+            } catch (Exception chatError) {
+                logger.error("Erreur lors de la synchronisation des memberships de chat profilId={}, keycloakId={}, role={}", profil.getId(), keycloakId, profil.getRole(), chatError);
+            }
 
             boolean invitationEnvoyee;
             try {
