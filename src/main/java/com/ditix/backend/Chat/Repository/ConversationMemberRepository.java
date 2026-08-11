@@ -16,6 +16,8 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
 
     Optional<ConversationMember> findByConversationIdAndUserIdAndActiveTrue(Long conversationId, String userId);
 
+    Optional<ConversationMember> findFirstByConversationIdAndUserIdOrderByIdDesc(Long conversationId, String userId);
+
     List<ConversationMember> findByConversationIdAndActiveTrue(Long conversationId);
 
     List<ConversationMember> findByUserIdAndActiveTrue(String userId);
@@ -35,4 +37,8 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     @Modifying
     @Query(nativeQuery = true, value = "UPDATE public.conversation_members SET active = false, left_at = CURRENT_TIMESTAMP WHERE conversation_id = :conversationId AND active = true")
     int deactivateAllMembers(@Param("conversationId") Long conversationId);
+
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE public.conversation_members SET active = false, left_at = CURRENT_TIMESTAMP WHERE conversation_id = :conversationId AND user_id = :userId AND active = true")
+    int deactivateSpecificMember(@Param("conversationId") Long conversationId, @Param("userId") String userId);
 }
