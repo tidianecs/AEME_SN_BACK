@@ -15,6 +15,13 @@ public class Meeting {
     @Column(nullable = false, unique = true)
     private String roomId; //FOR JITSI
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MeetingType type;
+
+    @Column(name = "reference_id")
+    private Long referenceId;
+
     @Column(nullable = false)
     private LocalDateTime scheduledAt;
 
@@ -60,6 +67,20 @@ public class Meeting {
     }
     public void setRoomId(String roomId) { 
         this.roomId = roomId; 
+    }
+
+    public MeetingType getType() {
+        return type;
+    }
+    public void setType(MeetingType type) {
+        this.type = type;
+    }
+
+    public Long getReferenceId() {
+        return referenceId;
+    }
+    public void setReferenceId(Long referenceId) {
+        this.referenceId = referenceId;
     }
 
     public LocalDateTime getScheduledAt() { 

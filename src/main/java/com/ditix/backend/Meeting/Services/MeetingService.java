@@ -26,6 +26,8 @@ public class MeetingService {
         Meeting meeting = new Meeting();
         meeting.setScheduledAt(request.getScheduledAt());
         meeting.setCreatedByUserId(userId);
+        meeting.setType(com.ditix.backend.Meeting.Model.MeetingType.DIRECT);
+        meeting.setReferenceId(null);
 
         String roomId = "aeme-" + UUID.randomUUID().toString().substring(0, 8);
         meeting.setRoomId(roomId);
