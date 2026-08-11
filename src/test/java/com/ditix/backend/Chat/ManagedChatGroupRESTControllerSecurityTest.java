@@ -158,6 +158,20 @@ public class ManagedChatGroupRESTControllerSecurityTest {
     }
 
     @Test
+    void createMinistere_adminUser_shouldReturn201() throws Exception {
+        when(managedChatGroupService.createOrGetMinistereGroup(eq("min1"), eq("Ministere"), eq("00000000-0000-0000-0000-000000000001")))
+                .thenReturn(createMockGroup(3L, ConversationType.MINISTERE, "min1"));
+
+        mockMvc.perform(post("/api/v1/admin/chat/groups/ministere")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"referenceId\": \"min1\", \"name\": \"Ministere\"}")
+                .with(SecurityMockMvcRequestPostProcessors.jwt()
+                        .jwt(jwt -> jwt.subject("00000000-0000-0000-0000-000000000001"))
+                        .authorities(new SimpleGrantedAuthority("ROLE_admin"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.type").value("MINISTERE"))
+                .andExpect(jsonPath("$.referenceId").value("min1"));
+    }
     void listGroups_adminUser_shouldReturn200() throws Exception {
         when(managedChatGroupService.listManagedGroups())
                 .thenReturn(List.of(createMockGroup(1L, ConversationType.GLOBAL, "GLOBAL")));

@@ -4,5 +4,6 @@ public enum ConversationType {
     DIRECT,
     COHORT,
     STRUCTURE,
-    GLOBAL
+    GLOBAL,
+    MINISTERE
 }

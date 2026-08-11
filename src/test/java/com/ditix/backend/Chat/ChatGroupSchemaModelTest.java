@@ -31,11 +31,12 @@ public class ChatGroupSchemaModelTest {
 
     @Test
     void testEnumValues() {
-        assertEquals(4, ConversationType.values().length);
+        assertEquals(5, ConversationType.values().length);
         assertDoesNotThrow(() -> ConversationType.valueOf("DIRECT"));
         assertDoesNotThrow(() -> ConversationType.valueOf("COHORT"));
         assertDoesNotThrow(() -> ConversationType.valueOf("STRUCTURE"));
         assertDoesNotThrow(() -> ConversationType.valueOf("GLOBAL"));
+        assertDoesNotThrow(() -> ConversationType.valueOf("MINISTERE"));
 
         assertEquals(2, ConversationMemberRole.values().length);
         assertDoesNotThrow(() -> ConversationMemberRole.valueOf("MEMBER"));

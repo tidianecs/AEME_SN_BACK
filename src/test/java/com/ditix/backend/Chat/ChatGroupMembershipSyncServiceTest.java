@@ -46,11 +46,7 @@ public class ChatGroupMembershipSyncServiceTest {
 
         when(conversationRepository.findById(1L)).thenReturn(Optional.of(conv));
         
-        List<ChatGroupUser> users = List.of(
-                new ChatGroupUser("u1", null, null),
-                new ChatGroupUser("u2", null, null)
-        );
-        when(userDirectory.fetchAllEnabledUsers()).thenReturn(users);
+        when(userDirectory.fetchGlobalMembers()).thenReturn(List.of("u1", "u2"));
         when(applyService.applyGroupSync(eq(1L), anyList())).thenReturn(new ChatGroupSyncReport());
 
         syncService.syncGroup(1L);
@@ -75,11 +71,7 @@ public class ChatGroupMembershipSyncServiceTest {
 
         when(conversationRepository.findById(2L)).thenReturn(Optional.of(conv));
         
-        List<ChatGroupUser> users = List.of(
-                new ChatGroupUser("u1", "COHORT-A", null),
-                new ChatGroupUser("u2", "COHORT-B", null)
-        );
-        when(userDirectory.fetchAllEnabledUsers()).thenReturn(users);
+        when(userDirectory.fetchCohortMembers("COHORT-A")).thenReturn(List.of("u1"));
 
         syncService.syncGroup(2L);
 
@@ -102,12 +94,7 @@ public class ChatGroupMembershipSyncServiceTest {
 
         when(conversationRepository.findById(3L)).thenReturn(Optional.of(conv));
         
-        List<ChatGroupUser> users = List.of(
-                new ChatGroupUser("u1", null, "10"),
-                new ChatGroupUser("u2", null, "11"),
-                new ChatGroupUser("u3", null, null)
-        );
-        when(userDirectory.fetchAllEnabledUsers()).thenReturn(users);
+        when(userDirectory.fetchStructureMembers("10")).thenReturn(List.of("u1"));
 
         syncService.syncGroup(3L);
 
