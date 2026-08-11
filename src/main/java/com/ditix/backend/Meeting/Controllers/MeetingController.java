@@ -9,15 +9,19 @@ import java.util.Map;
 import com.ditix.backend.Meeting.Services.MeetingService;
 import com.ditix.backend.Meeting.DTO.MeetingResponseDTO;
 import com.ditix.backend.Meeting.DTO.CreateMeetingRequest;
+import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
+import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
 
 @RestController
 @RequestMapping("/api/v1/meetings")
 public class MeetingController {
 
     private final MeetingService meetingService;
+    private final ProfilUtilisateurCourantService profilService;
 
-    public MeetingController(MeetingService meetingService) {
+    public MeetingController(MeetingService meetingService, ProfilUtilisateurCourantService profilService) {
         this.meetingService = meetingService;
+        this.profilService = profilService;
     }
 
     // Créer un meeting
@@ -36,8 +40,8 @@ public class MeetingController {
     public ResponseEntity<List<MeetingResponseDTO>> getMyMeetings(
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
-        return ResponseEntity.ok(meetingService.getMyMeetings(userId));
+        ProfilUtilisateur profil = profilService.obtenirProfilCourant(authentication);
+        return ResponseEntity.ok(meetingService.getMyMeetings(profil));
     }
 
     // Détail d'un meeting
@@ -46,8 +50,8 @@ public class MeetingController {
             @PathVariable Long id,
             JwtAuthenticationToken authentication
     ) {
-        String userId = authentication.getToken().getSubject();
-        return ResponseEntity.ok(meetingService.getMeetingById(id, userId));
+        ProfilUtilisateur profil = profilService.obtenirProfilCourant(authentication);
+        return ResponseEntity.ok(meetingService.getMeetingById(id, profil));
     }
 
     // Mettre à jour le statut
