@@ -16,4 +16,8 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
     // Meetings où le user est participant
     @Query("SELECT m FROM Meeting m WHERE :userId MEMBER OF m.participantIds")
     List<Meeting> findByParticipant(String userId);
+
+    List<Meeting> findByType(com.ditix.backend.Meeting.Model.MeetingType type);
+
+    List<Meeting> findByTypeAndReferenceId(com.ditix.backend.Meeting.Model.MeetingType type, Long referenceId);
 }
