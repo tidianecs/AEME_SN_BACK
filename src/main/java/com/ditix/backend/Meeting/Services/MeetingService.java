@@ -12,14 +12,17 @@ import com.ditix.backend.Meeting.DTO.MeetingResponseDTO;
 import com.ditix.backend.Meeting.Model.Meeting;
 import com.ditix.backend.Meeting.DTO.CreateMeetingRequest;
 import com.ditix.backend.Meeting.Model.MeetingStatus;
+import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
 
 @Service
 public class MeetingService {
 
     private final MeetingRepository meetingRepository;
+    private final MeetingAutorisationService autorisationService;
 
-    public MeetingService(MeetingRepository meetingRepository) {
+    public MeetingService(MeetingRepository meetingRepository, MeetingAutorisationService autorisationService) {
         this.meetingRepository = meetingRepository;
+        this.autorisationService = autorisationService;
     }
 
     public MeetingResponseDTO createMeeting(CreateMeetingRequest request, String userId) {
@@ -44,28 +47,18 @@ public class MeetingService {
         return new MeetingResponseDTO(meetingRepository.save(meeting));
     }
 
-    public List<MeetingResponseDTO> getMyMeetings(String userId) {
-        List<Meeting> created = meetingRepository.findByCreatedByUserId(userId);
-        List<Meeting> participating = meetingRepository.findByParticipant(userId);
-
-        List<Meeting> all = new ArrayList<>(created);
-        participating.stream()
-            .filter(m -> all.stream().noneMatch(c -> c.getId().equals(m.getId())))
-            .forEach(all::add);
-
-        return all.stream()
+    public List<MeetingResponseDTO> getMyMeetings(ProfilUtilisateur profil) {
+        List<Meeting> accessible = autorisationService.obtenirMeetingsAccessibles(profil);
+        return accessible.stream()
             .map(MeetingResponseDTO::new)
             .collect(Collectors.toList());
     }
 
-    public MeetingResponseDTO getMeetingById(Long id, String userId) {
+    public MeetingResponseDTO getMeetingById(Long id, ProfilUtilisateur profil) {
         Meeting meeting = meetingRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Meeting introuvable"));
 
-        boolean isParticipant = meeting.getParticipantIds().contains(userId);
-        boolean isCreator = meeting.getCreatedByUserId().equals(userId);
-
-        if (!isParticipant && !isCreator) {
+        if (!autorisationService.peutLireMeeting(meeting, profil)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
 
