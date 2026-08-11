@@ -93,7 +93,8 @@ public class ReportController {
 
     @GetMapping
     public ResponseEntity<List<ReportResponseDTO>> getMyReports(JwtAuthenticationToken authentication) {
-        String userId = authentication.getToken().getSubject();
+        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+        String userId = profil.getKeycloakId().toString();
         return ResponseEntity.ok(reportService.getMyReports(userId));
     }
 
@@ -117,7 +118,8 @@ public class ReportController {
             @PathVariable Long id,
             JwtAuthenticationToken authentication
     ) throws IOException {
-        String userId = authentication.getToken().getSubject();
+        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+        String userId = profil.getKeycloakId().toString();
         reportService.deleteReport(id, userId);
         return ResponseEntity.ok(Map.of("message", "Rapport supprimé"));
     }

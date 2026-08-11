@@ -30,8 +30,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Preflight OPTIONS — toujours permis
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v1/auth/register").permitAll()
                 .requestMatchers("/ws/**").permitAll()
+                // Explicitly deny legacy register route
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").denyAll()
                 // Routes admin uniquement
                 .requestMatchers(HttpMethod.GET, "/api/v1/structures", "/api/v1/structures/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/structures", "/api/v1/structures/**").hasRole("admin")

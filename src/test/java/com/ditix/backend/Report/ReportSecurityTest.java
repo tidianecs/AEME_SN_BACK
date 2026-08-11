@@ -240,4 +240,55 @@ public class ReportSecurityTest {
 
         verify(reportService, times(1)).getRawReport(eq(1L), any());
     }
+
+    @Test
+    void deleteReport_withoutAuthentication_shouldReturn401() throws Exception {
+        mockMvc.perform(delete("/api/v1/reports/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteReport_profileAbsent_shouldReturn403() throws Exception {
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any()))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN));
+
+        mockMvc.perform(delete("/api/v1/reports/1")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteReport_profileInactive_shouldReturn403() throws Exception {
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any()))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN));
+
+        mockMvc.perform(delete("/api/v1/reports/1")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteReport_owner_shouldBeAllowed() throws Exception {
+        com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
+        profil.setKeycloakId(java.util.UUID.randomUUID());
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any())).thenReturn(profil);
+
+        mockMvc.perform(delete("/api/v1/reports/1")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void deleteReport_nonOwner_shouldReturn403() throws Exception {
+        com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
+        profil.setKeycloakId(java.util.UUID.randomUUID());
+        when(profilUtilisateurCourantService.obtenirProfilCourant(any())).thenReturn(profil);
+
+        doThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN))
+                .when(reportService).deleteReport(eq(1L), anyString());
+
+        mockMvc.perform(delete("/api/v1/reports/1")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isForbidden());
+    }
 }

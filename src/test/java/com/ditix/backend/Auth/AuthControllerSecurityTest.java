@@ -16,9 +16,14 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.ditix.backend.Core.SecurityConfig;
+import org.springframework.context.annotation.Import;
+
 @WebMvcTest(AuthController.class)
+@Import(SecurityConfig.class)
 public class AuthControllerSecurityTest {
 
     @Autowired
@@ -96,5 +101,25 @@ public class AuthControllerSecurityTest {
                 .andExpect(status().isForbidden());
 
         verify(authService, never()).getUserById(anyString());
+    }
+
+    @Test
+    void register_noJwt_shouldReturn401() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void register_roleUser_shouldReturn403() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                .with(SecurityMockMvcRequestPostProcessors.jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
+                .andExpect(status().isForbidden()); // Explicitly denied
+    }
+
+    @Test
+    void register_roleAdmin_shouldReturn403() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                .with(SecurityMockMvcRequestPostProcessors.jwt().authorities(new SimpleGrantedAuthority("ROLE_admin"))))
+                .andExpect(status().isForbidden()); // Explicitly denied
     }
 }
