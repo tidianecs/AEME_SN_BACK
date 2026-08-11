@@ -69,6 +69,10 @@ public class MeetingService {
         Meeting meeting = meetingRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Meeting introuvable"));
 
+        if (meeting.getType() != com.ditix.backend.Meeting.Model.MeetingType.DIRECT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé: meeting géré par admin");
+        }
+
         if (!meeting.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
         }
@@ -80,6 +84,10 @@ public class MeetingService {
     public void deleteMeeting(Long id, String userId) {
         Meeting meeting = meetingRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Meeting introuvable"));
+
+        if (meeting.getType() != com.ditix.backend.Meeting.Model.MeetingType.DIRECT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé: meeting géré par admin");
+        }
 
         if (!meeting.getCreatedByUserId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Non autorisé");
