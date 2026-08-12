@@ -12,6 +12,8 @@ import com.ditix.backend.Structure.Repository.StructureRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,12 +42,20 @@ public class ProfilUtilisateurIntegrationTest {
     @Autowired
     private CohorteRepository cohorteRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private Ministere savedMinistere;
     private Structure savedStructure;
     private Cohorte savedCohorte;
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM reports");
+        jdbcTemplate.execute("DELETE FROM meeting_participants");
+        jdbcTemplate.execute("DELETE FROM meetings");
+        jdbcTemplate.execute("DELETE FROM conversation_members");
+        jdbcTemplate.execute("DELETE FROM conversations");
         profilRepository.deleteAll();
         structureRepository.deleteAll();
         ministereRepository.deleteAll();
