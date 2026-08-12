@@ -3,6 +3,7 @@ package com.ditix.backend.Meeting.DTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.ditix.backend.Meeting.Model.Meeting;
+import com.ditix.backend.Meeting.Model.MeetingType;
 
 public class MeetingResponseDTO {
 
@@ -14,6 +15,8 @@ public class MeetingResponseDTO {
     private List<String> participantIds;
     private String createdByUserId;
     private LocalDateTime createdAt;
+    private MeetingType type;
+    private Long referenceId;
 
     public MeetingResponseDTO(Meeting meeting) {
         this.id = meeting.getId();
@@ -24,6 +27,8 @@ public class MeetingResponseDTO {
         this.participantIds = meeting.getParticipantIds();
         this.createdByUserId = meeting.getCreatedByUserId();
         this.createdAt = meeting.getCreatedAt();
+        this.type = meeting.getType();
+        this.referenceId = meeting.getReferenceId();
     }
 
     public Long getId() { 
@@ -49,5 +54,11 @@ public class MeetingResponseDTO {
     }
     public LocalDateTime getCreatedAt() { 
         return createdAt; 
+    }
+    public MeetingType getType() {
+        return type;
+    }
+    public Long getReferenceId() {
+        return referenceId;
     }
 }
