@@ -107,4 +107,28 @@ public class ChatUserMembershipService {
             }
         }
     }
+
+    @Transactional
+    public void deactivateManagedMemberships(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+
+        List<ConversationMember> currentActiveMemberships = conversationMemberRepository.findByUserIdAndActiveTrue(userId);
+        if (currentActiveMemberships.isEmpty()) {
+            return;
+        }
+
+        List<Long> currentActiveConversationIds = currentActiveMemberships.stream()
+                .map(ConversationMember::getConversationId)
+                .toList();
+
+        List<Conversation> currentConversations = conversationRepository.findAllById(currentActiveConversationIds);
+        for (Conversation conv : currentConversations) {
+            if (conv.isSystemManaged() && conv.getType() != ConversationType.DIRECT) {
+                conversationMemberRepository.deactivateSpecificMember(conv.getId(), userId);
+                logger.info("Deactivated system-managed membership for user {} in conversation {}", userId, conv.getId());
+            }
+        }
+    }
 }

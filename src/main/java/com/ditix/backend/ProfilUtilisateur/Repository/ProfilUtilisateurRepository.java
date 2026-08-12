@@ -44,4 +44,8 @@ public interface ProfilUtilisateurRepository extends JpaRepository<ProfilUtilisa
             "((p.role = 'DAGE' AND p.ministere.id = :ministereId) OR " +
             "(p.role = 'GESTIONNAIRE' AND p.structure.ministereV2.id = :ministereId))")
     java.util.List<UUID> findActiveMembersByMinistere(@org.springframework.data.repository.query.Param("ministereId") Long ministereId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM ProfilUtilisateur p WHERE p.role = com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN ORDER BY p.id")
+    java.util.List<ProfilUtilisateur> findAllAdminsForUpdate();
 }

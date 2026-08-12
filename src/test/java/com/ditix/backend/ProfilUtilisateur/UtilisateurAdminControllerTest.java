@@ -6,6 +6,7 @@ import com.ditix.backend.ProfilUtilisateur.DTO.CreationUtilisateurResponse;
 import com.ditix.backend.ProfilUtilisateur.DTO.ProfilUtilisateurDTO;
 import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
 import com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur;
+import com.ditix.backend.ProfilUtilisateur.Services.ActivationUtilisateurOrchestrator;
 import com.ditix.backend.ProfilUtilisateur.Services.CreationUtilisateurOrchestrator;
 import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +45,9 @@ public class UtilisateurAdminControllerTest {
 
     @MockBean
     private ProfilUtilisateurCourantService profilUtilisateurCourantService;
+
+    @MockBean
+    private ActivationUtilisateurOrchestrator activationUtilisateurOrchestrator;
 
     @MockBean
     private JwtDecoder jwtDecoder;

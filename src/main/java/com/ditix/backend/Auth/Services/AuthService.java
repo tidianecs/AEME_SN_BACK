@@ -420,6 +420,26 @@ public class AuthService {
         keycloak.realm(realm).users().get(userId).remove();
     }
 
+    public void setUserEnabled(String userId, boolean enabled) {
+        try {
+            org.keycloak.admin.client.resource.UserResource userResource = keycloak.realm(realm).users().get(userId);
+            UserRepresentation user = userResource.toRepresentation();
+            user.setEnabled(enabled);
+            userResource.update(user);
+        } catch (jakarta.ws.rs.NotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable dans Keycloak");
+        }
+    }
+
+    public boolean isUserEnabled(String userId) {
+        try {
+            UserRepresentation user = keycloak.realm(realm).users().get(userId).toRepresentation();
+            return user.isEnabled() != null && user.isEnabled();
+        } catch (jakarta.ws.rs.NotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable dans Keycloak");
+        }
+    }
+
     private String getAttr(UserRepresentation user, String key) {
         if (user.getAttributes() == null) return "";
         List<String> vals = user.getAttributes().get(key);
