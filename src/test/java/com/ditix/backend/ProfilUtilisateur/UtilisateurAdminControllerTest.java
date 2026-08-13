@@ -52,6 +52,12 @@ public class UtilisateurAdminControllerTest {
     @MockBean
     private JwtDecoder jwtDecoder;
 
+    @MockBean
+    private com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository;
+
+    @MockBean
+    private com.ditix.backend.Report.Services.ReportService reportService;
+
     private CreerUtilisateurRequest request;
     private JwtAuthenticationToken mockToken;
     private ProfilUtilisateur profilAdmin;
