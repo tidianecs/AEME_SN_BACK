@@ -20,6 +20,12 @@ import com.ditix.backend.ProfilUtilisateur.Services.ActivationUtilisateurOrchest
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import com.ditix.backend.Report.DTO.ReportResponseDTO;
+import com.ditix.backend.Report.Services.ReportService;
+import com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+
 @RestController
 @RequestMapping("/api/v2/admin/utilisateurs")
 public class UtilisateurAdminController {
@@ -27,14 +33,20 @@ public class UtilisateurAdminController {
     private final CreationUtilisateurOrchestrator creationUtilisateurOrchestrator;
     private final ProfilUtilisateurCourantService profilUtilisateurCourantService;
     private final ActivationUtilisateurOrchestrator activationUtilisateurOrchestrator;
+    private final ProfilUtilisateurRepository profilUtilisateurRepository;
+    private final ReportService reportService;
 
     public UtilisateurAdminController(
             CreationUtilisateurOrchestrator creationUtilisateurOrchestrator,
             ProfilUtilisateurCourantService profilUtilisateurCourantService,
-            ActivationUtilisateurOrchestrator activationUtilisateurOrchestrator) {
+            ActivationUtilisateurOrchestrator activationUtilisateurOrchestrator,
+            ProfilUtilisateurRepository profilUtilisateurRepository,
+            ReportService reportService) {
         this.creationUtilisateurOrchestrator = creationUtilisateurOrchestrator;
         this.profilUtilisateurCourantService = profilUtilisateurCourantService;
         this.activationUtilisateurOrchestrator = activationUtilisateurOrchestrator;
+        this.profilUtilisateurRepository = profilUtilisateurRepository;
+        this.reportService = reportService;
     }
 
     @PostMapping
@@ -67,5 +79,26 @@ public class UtilisateurAdminController {
 
         activationUtilisateurOrchestrator.activerUtilisateur(id, request, adminCourant);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/reports")
+    public ResponseEntity<List<ReportResponseDTO>> getUserReports(
+            @PathVariable Long id,
+            JwtAuthenticationToken authentication) {
+
+        ProfilUtilisateur adminCourant = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
+        if (adminCourant.getRole() != RoleUtilisateur.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé. Rôle métier ADMIN requis.");
+        }
+
+        ProfilUtilisateur target = profilUtilisateurRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur cible introuvable"));
+
+        if (target.getKeycloakId() == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "L'utilisateur cible n'a pas d'identifiant Keycloak valide");
+        }
+
+        List<ReportResponseDTO> reports = reportService.getReportsByUserId(target.getKeycloakId().toString());
+        return ResponseEntity.ok(reports);
     }
 }

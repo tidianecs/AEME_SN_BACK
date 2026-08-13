@@ -47,6 +47,12 @@ class UtilisateurAdminActivationSecurityTest {
     @MockBean
     private ActivationUtilisateurOrchestrator activationUtilisateurOrchestrator;
 
+    @MockBean
+    private com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository;
+
+    @MockBean
+    private com.ditix.backend.Report.Services.ReportService reportService;
+
     @Test
     void updateActivation_noJwt_shouldReturn401() throws Exception {
         ActivationUtilisateurRequest request = new ActivationUtilisateurRequest();

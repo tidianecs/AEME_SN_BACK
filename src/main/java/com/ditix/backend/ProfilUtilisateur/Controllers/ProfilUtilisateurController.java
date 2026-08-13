@@ -48,6 +48,13 @@ public class ProfilUtilisateurController {
         return new ProfilUtilisateurDTO(profil);
     }
 
+    @PatchMapping("/me")
+    public ProfilUtilisateurDTO updateMe(
+            JwtAuthenticationToken authentication,
+            @RequestBody com.ditix.backend.ProfilUtilisateur.DTO.ModifierMonProfilRequest request) {
+        return profilUtilisateurCourantService.modifierProfilCourant(authentication, request);
+    }
+
     @GetMapping("/admin/utilisateurs")
     public Page<ProfilUtilisateurDTO> listAdminUsers(
             JwtAuthenticationToken authentication,
