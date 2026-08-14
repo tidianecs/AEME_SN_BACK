@@ -67,6 +67,8 @@ public class MeetingControllerSecurityTest {
     void createMeeting_activeAdmin_shouldBeAllowed() throws Exception {
         com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
         profil.setKeycloakId(java.util.UUID.randomUUID());
+        profil.setRole(com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN);
+        profil.setActif(true);
         when(profilService.obtenirProfilCourant(any())).thenReturn(profil);
 
         mockMvc.perform(post("/api/v1/meetings")
@@ -79,29 +81,48 @@ public class MeetingControllerSecurityTest {
     }
 
     @Test
-    void createMeeting_activeDage_shouldBeAllowed() throws Exception {
+    void createMeeting_activeDage_shouldReturn403() throws Exception {
         com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
         profil.setKeycloakId(java.util.UUID.randomUUID());
+        profil.setRole(com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.DAGE);
+        profil.setActif(true);
         when(profilService.obtenirProfilCourant(any())).thenReturn(profil);
 
         mockMvc.perform(post("/api/v1/meetings")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}")
                 .with(SecurityMockMvcRequestPostProcessors.jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
-                .andExpect(status().isCreated());
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void createMeeting_activeGestionnaire_shouldBeAllowed() throws Exception {
+    void createMeeting_activeGestionnaire_shouldReturn403() throws Exception {
         com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
         profil.setKeycloakId(java.util.UUID.randomUUID());
+        profil.setRole(com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.GESTIONNAIRE);
+        profil.setActif(true);
         when(profilService.obtenirProfilCourant(any())).thenReturn(profil);
 
         mockMvc.perform(post("/api/v1/meetings")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}")
                 .with(SecurityMockMvcRequestPostProcessors.jwt().authorities(new SimpleGrantedAuthority("ROLE_user"))))
-                .andExpect(status().isCreated());
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void createMeeting_inactiveAdmin_shouldReturn403() throws Exception {
+        com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur profil = new com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur();
+        profil.setKeycloakId(java.util.UUID.randomUUID());
+        profil.setRole(com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN);
+        profil.setActif(false);
+        when(profilService.obtenirProfilCourant(any())).thenReturn(profil);
+
+        mockMvc.perform(post("/api/v1/meetings")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+                .with(SecurityMockMvcRequestPostProcessors.jwt().authorities(new SimpleGrantedAuthority("ROLE_admin"))))
+                .andExpect(status().isForbidden());
     }
 
     @Test

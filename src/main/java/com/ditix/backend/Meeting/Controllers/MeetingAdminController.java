@@ -29,8 +29,8 @@ public class MeetingAdminController {
 
     private ProfilUtilisateur requireAdmin(JwtAuthenticationToken auth) {
         ProfilUtilisateur profil = profilService.obtenirProfilCourant(auth);
-        if (profil.getRole() != RoleUtilisateur.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès admin requis");
+        if (profil.getRole() != RoleUtilisateur.ADMIN || !Boolean.TRUE.equals(profil.getActif())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès admin actif requis");
         }
         return profil;
     }
