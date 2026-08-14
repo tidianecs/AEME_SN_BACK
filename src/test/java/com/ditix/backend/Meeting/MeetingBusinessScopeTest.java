@@ -143,9 +143,9 @@ public class MeetingBusinessScopeTest {
     public void testV1CreateForcesDirect() {
         CreateMeetingRequest req = new CreateMeetingRequest();
         req.setScheduledAt(LocalDateTime.now().plusDays(2));
-        req.setParticipantIds(List.of("user-2"));
+        req.setParticipantIds(List.of("00000000-0000-0000-0000-000000000002"));
 
-        var response = meetingService.createMeeting(req, "creator-1");
+        var response = meetingService.createMeeting(req, "00000000-0000-0000-0000-000000000001");
         assertNotNull(response.getId());
 
         Meeting m = meetingRepository.findById(response.getId()).orElseThrow();
@@ -153,9 +153,9 @@ public class MeetingBusinessScopeTest {
         assertNull(m.getReferenceId());
 
         // creator is correct
-        assertEquals("creator-1", m.getCreatedByUserId());
+        assertEquals("00000000-0000-0000-0000-000000000001", m.getCreatedByUserId());
         // participants: creator + user-2
-        assertTrue(m.getParticipantIds().contains("creator-1"));
-        assertTrue(m.getParticipantIds().contains("user-2"));
+        assertTrue(m.getParticipantIds().contains("00000000-0000-0000-0000-000000000001"));
+        assertTrue(m.getParticipantIds().contains("00000000-0000-0000-0000-000000000002"));
     }
 }

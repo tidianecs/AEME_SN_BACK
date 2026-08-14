@@ -31,6 +31,9 @@ public class MeetingController {
             JwtAuthenticationToken authentication
     ) {
         ProfilUtilisateur profil = profilService.obtenirProfilCourant(authentication);
+        if (profil.getRole() != com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN || !Boolean.TRUE.equals(profil.getActif())) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "Accès admin actif requis");
+        }
         String userId = profil.getKeycloakId().toString();
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(meetingService.createMeeting(request, userId));

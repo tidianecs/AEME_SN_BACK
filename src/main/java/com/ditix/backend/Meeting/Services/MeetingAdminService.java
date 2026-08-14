@@ -26,15 +26,21 @@ public class MeetingAdminService {
     private final CohorteRepository cohorteRepository;
     private final StructureRepository structureRepository;
     private final MinistereRepository ministereRepository;
+    private final com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository;
+    private final com.ditix.backend.Notification.Services.NotificationService notificationService;
 
     public MeetingAdminService(MeetingRepository meetingRepository,
                                CohorteRepository cohorteRepository,
                                StructureRepository structureRepository,
-                               MinistereRepository ministereRepository) {
+                               MinistereRepository ministereRepository,
+                               com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository,
+                               com.ditix.backend.Notification.Services.NotificationService notificationService) {
         this.meetingRepository = meetingRepository;
         this.cohorteRepository = cohorteRepository;
         this.structureRepository = structureRepository;
         this.ministereRepository = ministereRepository;
+        this.profilUtilisateurRepository = profilUtilisateurRepository;
+        this.notificationService = notificationService;
     }
 
     private Meeting initManagedMeeting(CreateManagedMeetingRequest request, ProfilUtilisateur admin, MeetingType type, Long referenceId) {
@@ -49,11 +55,15 @@ public class MeetingAdminService {
         return meeting;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public MeetingResponseDTO createGlobalMeeting(CreateManagedMeetingRequest request, ProfilUtilisateur admin) {
         Meeting meeting = initManagedMeeting(request, admin, MeetingType.GLOBAL, null);
-        return new MeetingResponseDTO(meetingRepository.save(meeting));
+        meeting = meetingRepository.save(meeting);
+        notificationService.createMeetingNotifications(meeting, profilUtilisateurRepository.findActiveGlobalChatMembers());
+        return new MeetingResponseDTO(meeting);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public MeetingResponseDTO createCohortMeeting(CreateManagedMeetingRequest request, ProfilUtilisateur admin) {
         if (request.getTargetId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de cohorte requis");
@@ -66,9 +76,12 @@ public class MeetingAdminService {
         }
 
         Meeting meeting = initManagedMeeting(request, admin, MeetingType.COHORT, request.getTargetId());
-        return new MeetingResponseDTO(meetingRepository.save(meeting));
+        meeting = meetingRepository.save(meeting);
+        notificationService.createMeetingNotifications(meeting, profilUtilisateurRepository.findActiveMembersByCohorte(request.getTargetId()));
+        return new MeetingResponseDTO(meeting);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public MeetingResponseDTO createStructureMeeting(CreateManagedMeetingRequest request, ProfilUtilisateur admin) {
         if (request.getTargetId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de structure requis");
@@ -81,9 +94,12 @@ public class MeetingAdminService {
         }
 
         Meeting meeting = initManagedMeeting(request, admin, MeetingType.STRUCTURE, request.getTargetId());
-        return new MeetingResponseDTO(meetingRepository.save(meeting));
+        meeting = meetingRepository.save(meeting);
+        notificationService.createMeetingNotifications(meeting, profilUtilisateurRepository.findActiveMembersByStructure(request.getTargetId()));
+        return new MeetingResponseDTO(meeting);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public MeetingResponseDTO createMinistereMeeting(CreateManagedMeetingRequest request, ProfilUtilisateur admin) {
         if (request.getTargetId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de ministère requis");
@@ -96,7 +112,9 @@ public class MeetingAdminService {
         }
 
         Meeting meeting = initManagedMeeting(request, admin, MeetingType.MINISTERE, request.getTargetId());
-        return new MeetingResponseDTO(meetingRepository.save(meeting));
+        meeting = meetingRepository.save(meeting);
+        notificationService.createMeetingNotifications(meeting, profilUtilisateurRepository.findActiveMembersByMinistere(request.getTargetId()));
+        return new MeetingResponseDTO(meeting);
     }
 
     public MeetingResponseDTO updateStatus(Long id, String status, ProfilUtilisateur admin) {
