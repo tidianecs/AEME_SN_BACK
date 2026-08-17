@@ -7,12 +7,15 @@ import com.ditix.backend.Ministere.Repository.MinistereRepository;
 import com.ditix.backend.Ministere.Model.Ministere;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
 
 @Service
+@Transactional
 public class StructureService {
 
     private final StructureRepository structureRepository;
