@@ -178,7 +178,7 @@ public class MeetingAdminIntegrationTest {
     public void testV1Regression() {
         CreateMeetingRequest req = new CreateMeetingRequest();
         req.setScheduledAt(LocalDateTime.now().plusDays(1));
-        req.setParticipantIds(List.of("user1", "user2"));
+        req.setParticipantIds(List.of("00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"));
 
         var res = meetingService.createMeeting(req, gestionnaire.getKeycloakId().toString());
 
@@ -186,7 +186,7 @@ public class MeetingAdminIntegrationTest {
         assertEquals(MeetingType.DIRECT, m.getType());
         assertNull(m.getReferenceId());
         assertEquals(gestionnaire.getKeycloakId().toString(), m.getCreatedByUserId());
-        assertTrue(m.getParticipantIds().contains("user1"));
+        assertTrue(m.getParticipantIds().contains("00000000-0000-0000-0000-000000000001"));
     }
 
     @Test

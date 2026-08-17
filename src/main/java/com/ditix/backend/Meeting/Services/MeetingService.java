@@ -19,12 +19,15 @@ public class MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final MeetingAutorisationService autorisationService;
+    private final com.ditix.backend.Notification.Services.NotificationService notificationService;
 
-    public MeetingService(MeetingRepository meetingRepository, MeetingAutorisationService autorisationService) {
+    public MeetingService(MeetingRepository meetingRepository, MeetingAutorisationService autorisationService, com.ditix.backend.Notification.Services.NotificationService notificationService) {
         this.meetingRepository = meetingRepository;
         this.autorisationService = autorisationService;
+        this.notificationService = notificationService;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public MeetingResponseDTO createMeeting(CreateMeetingRequest request, String userId) {
         Meeting meeting = new Meeting();
         meeting.setScheduledAt(request.getScheduledAt());
@@ -44,7 +47,16 @@ public class MeetingService {
         }
         meeting.setParticipantIds(participants);
 
-        return new MeetingResponseDTO(meetingRepository.save(meeting));
+        meeting = meetingRepository.save(meeting);
+
+        if (request.getParticipantIds() != null && !request.getParticipantIds().isEmpty()) {
+            List<UUID> targetIds = request.getParticipantIds().stream()
+                .map(UUID::fromString)
+                .collect(Collectors.toList());
+            notificationService.createMeetingNotifications(meeting, targetIds);
+        }
+
+        return new MeetingResponseDTO(meeting);
     }
 
     public List<MeetingResponseDTO> getMyMeetings(ProfilUtilisateur profil) {

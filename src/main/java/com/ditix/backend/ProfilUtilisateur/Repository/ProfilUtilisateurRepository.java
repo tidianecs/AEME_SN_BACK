@@ -40,10 +40,16 @@ public interface ProfilUtilisateurRepository extends JpaRepository<ProfilUtilisa
     @org.springframework.data.jpa.repository.Query("SELECT p.keycloakId FROM ProfilUtilisateur p WHERE p.actif = true AND p.structure.id = :structureId")
     java.util.List<UUID> findActiveMembersByStructure(@org.springframework.data.repository.query.Param("structureId") Long structureId);
 
-    @org.springframework.data.jpa.repository.Query("SELECT p.keycloakId FROM ProfilUtilisateur p WHERE p.actif = true AND " +
+    @org.springframework.data.jpa.repository.Query("SELECT p.keycloakId FROM ProfilUtilisateur p " +
+            "LEFT JOIN p.structure s " +
+            "LEFT JOIN s.ministereV2 sm " +
+            "WHERE p.actif = true AND " +
             "((p.role = 'DAGE' AND p.ministere.id = :ministereId) OR " +
-            "(p.role = 'GESTIONNAIRE' AND p.structure.ministereV2.id = :ministereId))")
+            "(p.role = 'GESTIONNAIRE' AND sm.id = :ministereId))")
     java.util.List<UUID> findActiveMembersByMinistere(@org.springframework.data.repository.query.Param("ministereId") Long ministereId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM ProfilUtilisateur p WHERE p.actif = true AND p.keycloakId IN :keycloakIds")
+    java.util.List<ProfilUtilisateur> findActiveProfilesByKeycloakIds(@org.springframework.data.repository.query.Param("keycloakIds") java.util.Collection<UUID> keycloakIds);
 
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT p FROM ProfilUtilisateur p WHERE p.role = com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN ORDER BY p.id")
