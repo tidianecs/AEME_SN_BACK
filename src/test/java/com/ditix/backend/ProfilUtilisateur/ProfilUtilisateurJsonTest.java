@@ -2,6 +2,7 @@ package com.ditix.backend.ProfilUtilisateur;
 
 import com.ditix.backend.ProfilUtilisateur.Controllers.ProfilUtilisateurController;
 import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
+import com.ditix.backend.ProfilUtilisateur.DTO.ProfilUtilisateurDTO;
 import com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur;
 import com.ditix.backend.ProfilUtilisateur.Services.AutorisationMetierService;
 import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
@@ -77,7 +78,7 @@ public class ProfilUtilisateurJsonTest {
 
     @Test
     void testGetMe_JsonSerialization() throws Exception {
-        when(profilUtilisateurCourantService.obtenirProfilCourant(any())).thenReturn(profil);
+        when(profilUtilisateurCourantService.obtenirProfilCourantDTO(any())).thenReturn(new ProfilUtilisateurDTO(profil));
 
         JwtAuthenticationToken mockToken = org.mockito.Mockito.mock(org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken.class);
 
