@@ -138,7 +138,7 @@ public class ReportDownloadIntegrationTest {
         reportA.setProfilUtilisateur(gestionnaireA);
         reportA.setCreatedByUserId(gestionnaireA.getKeycloakId().toString());
         reportA.setReportStatus(ReportStatus.SUBMITTED);
-        
+
         // Attach the temp file
         reportA.setPieceJustificativeModificationPath(tempFile.toAbsolutePath().toString());
         reportA.setPieceJustificativeModificationName("justif.pdf");
