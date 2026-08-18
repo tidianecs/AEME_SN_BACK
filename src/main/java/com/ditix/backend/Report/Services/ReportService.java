@@ -211,7 +211,7 @@ public class ReportService {
         long rejected = reportRepository.countByCreatedByUserIdAndReportStatus(userId, ReportStatus.REJECTED);
         return (int) (approved * 4 - rejected * 5);
     }
-
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Report getRawReport(Long id, ProfilUtilisateur profil) {
         return getAccessibleReport(id, profil);
     }
