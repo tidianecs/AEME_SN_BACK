@@ -44,8 +44,7 @@ public class ProfilUtilisateurController {
 
     @GetMapping("/me")
     public ProfilUtilisateurDTO getMe(JwtAuthenticationToken authentication) {
-        ProfilUtilisateur profil = profilUtilisateurCourantService.obtenirProfilCourant(authentication);
-        return new ProfilUtilisateurDTO(profil);
+        return profilUtilisateurCourantService.obtenirProfilCourantDTO(authentication);
     }
 
     @PatchMapping("/me")

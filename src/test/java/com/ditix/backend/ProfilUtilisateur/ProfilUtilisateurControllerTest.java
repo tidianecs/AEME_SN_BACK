@@ -79,7 +79,7 @@ public class ProfilUtilisateurControllerTest {
 
     @Test
     void testGetMe() {
-        when(profilUtilisateurCourantService.obtenirProfilCourant(authentication)).thenReturn(adminProfil);
+        when(profilUtilisateurCourantService.obtenirProfilCourantDTO(authentication)).thenReturn(new ProfilUtilisateurDTO(adminProfil));
         ProfilUtilisateurDTO result = controller.getMe(authentication);
         assertNotNull(result);
         assertEquals(1L, result.getId());

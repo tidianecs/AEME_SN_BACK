@@ -12,7 +12,7 @@ import java.util.UUID;
 import com.ditix.backend.Auth.Services.AuthService;
 import com.ditix.backend.ProfilUtilisateur.DTO.ModifierMonProfilRequest;
 import com.ditix.backend.ProfilUtilisateur.DTO.ProfilUtilisateurDTO;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +48,11 @@ public class ProfilUtilisateurCourantService {
         }
 
         return profil;
+    }
+
+    @Transactional(readOnly = true)
+    public ProfilUtilisateurDTO obtenirProfilCourantDTO(JwtAuthenticationToken authentication) {
+        return new ProfilUtilisateurDTO(obtenirProfilCourant(authentication));
     }
 
     @Transactional
