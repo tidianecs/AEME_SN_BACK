@@ -170,6 +170,7 @@ public class ReportService {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à ce rapport");
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ReportResponseDTO getReportById(Long id, ProfilUtilisateur profil) {
         Report report = getAccessibleReport(id, profil);
         return new ReportResponseDTO(report);
