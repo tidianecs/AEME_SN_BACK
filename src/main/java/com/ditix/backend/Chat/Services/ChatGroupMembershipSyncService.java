@@ -60,24 +60,26 @@ public class ChatGroupMembershipSyncService {
     }
 
     private List<String> computeDesiredUsers(Conversation conversation) {
+        List<String> targetUsers = new ArrayList<>();
         if (conversation.getType() == ConversationType.GLOBAL) {
-            return userDirectory.fetchGlobalMembers();
+            targetUsers.addAll(userDirectory.fetchGlobalMembers());
+        } else {
+            String ref = conversation.getReferenceId();
+            if (ref == null || ref.trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Group reference ID cannot be blank");
+            }
+            String cleanRef = ref.trim();
+
+            if (conversation.getType() == ConversationType.COHORT) {
+                targetUsers.addAll(userDirectory.fetchCohortMembers(cleanRef));
+            } else if (conversation.getType() == ConversationType.STRUCTURE) {
+                targetUsers.addAll(userDirectory.fetchStructureMembers(cleanRef));
+            } else if (conversation.getType() == ConversationType.MINISTERE) {
+                targetUsers.addAll(userDirectory.fetchMinistereMembers(cleanRef));
+            }
         }
 
-        String ref = conversation.getReferenceId();
-        if (ref == null || ref.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Group reference ID cannot be blank");
-        }
-        String cleanRef = ref.trim();
-
-        if (conversation.getType() == ConversationType.COHORT) {
-            return userDirectory.fetchCohortMembers(cleanRef);
-        } else if (conversation.getType() == ConversationType.STRUCTURE) {
-            return userDirectory.fetchStructureMembers(cleanRef);
-        } else if (conversation.getType() == ConversationType.MINISTERE) {
-            return userDirectory.fetchMinistereMembers(cleanRef);
-        }
-
-        return List.of();
+        targetUsers.addAll(userDirectory.fetchActiveAdmins());
+        return targetUsers.stream().distinct().collect(java.util.stream.Collectors.toList());
     }
 }
