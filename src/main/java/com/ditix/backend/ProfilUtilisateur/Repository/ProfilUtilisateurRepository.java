@@ -54,4 +54,7 @@ public interface ProfilUtilisateurRepository extends JpaRepository<ProfilUtilisa
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT p FROM ProfilUtilisateur p WHERE p.role = com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN ORDER BY p.id")
     java.util.List<ProfilUtilisateur> findAllAdminsForUpdate();
+
+    @org.springframework.data.jpa.repository.Query("SELECT p.keycloakId FROM ProfilUtilisateur p WHERE p.actif = true AND p.role = com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN")
+    java.util.List<UUID> findActiveAdmins();
 }

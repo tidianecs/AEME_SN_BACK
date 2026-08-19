@@ -26,6 +26,12 @@ public class ChatGroupUserDirectory {
                 .collect(Collectors.toList());
     }
 
+    public List<String> fetchActiveAdmins() {
+        return profilRepository.findActiveAdmins().stream()
+                .map(UUID::toString)
+                .collect(Collectors.toList());
+    }
+
     public List<String> fetchCohortMembers(String cohortRef) {
         try {
             return profilRepository.findActiveMembersByCohorte(Long.parseLong(cohortRef)).stream()

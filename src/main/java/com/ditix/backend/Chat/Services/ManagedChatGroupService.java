@@ -17,11 +17,14 @@ public class ManagedChatGroupService {
 
     private final ConversationRepository conversationRepository;
     private final com.ditix.backend.Ministere.Repository.MinistereRepository ministereRepository;
+    private final ChatGroupMembershipSyncService syncService;
 
     public ManagedChatGroupService(ConversationRepository conversationRepository,
-                                   com.ditix.backend.Ministere.Repository.MinistereRepository ministereRepository) {
+                                   com.ditix.backend.Ministere.Repository.MinistereRepository ministereRepository,
+                                   ChatGroupMembershipSyncService syncService) {
         this.conversationRepository = conversationRepository;
         this.ministereRepository = ministereRepository;
+        this.syncService = syncService;
     }
 
     @Transactional
@@ -32,7 +35,7 @@ public class ManagedChatGroupService {
         if (name.trim().length() > 255) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot exceed 255 characters");
         }
-        
+
         return conversationRepository.findByTypeAndActiveTrue(ConversationType.GLOBAL)
                 .orElseGet(() -> createGroup(ConversationType.GLOBAL, "GLOBAL", name, creatorUserId));
     }
@@ -118,7 +121,7 @@ public class ManagedChatGroupService {
         } else {
             id = conversationRepository.insertCohortStructureOrMinistereGroupAtomically(type.name(), cleanName, referenceId, creatorUserId);
         }
-        
+
         if (id == null) {
             // Unflushed concurrent creation, wait for the other transaction and return it
             if (type == ConversationType.GLOBAL) {
@@ -129,7 +132,9 @@ public class ManagedChatGroupService {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Group creation conflict"));
             }
         }
-        
+
+        syncService.syncGroup(id);
+
         return conversationRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load created group"));
     }
@@ -168,9 +173,9 @@ public class ManagedChatGroupService {
         } else {
             lockKey = conv.getType().name() + ":" + conv.getReferenceId();
         }
-        
+
         conversationRepository.acquireAdvisoryXactLock(lockKey);
-        
+
         if (conv.getType() == ConversationType.GLOBAL) {
             if (conversationRepository.findByTypeAndActiveTrue(ConversationType.GLOBAL).isPresent()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Un groupe GLOBAL actif existe déjà");
