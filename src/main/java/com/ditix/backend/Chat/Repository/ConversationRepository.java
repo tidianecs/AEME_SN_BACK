@@ -18,7 +18,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
 
     // Toutes les conversations d'un user
     @Query("SELECT c FROM Conversation c JOIN ConversationMember cm ON c.id = cm.conversationId WHERE " +
-           "cm.userId = :userId AND cm.active = true AND c.active = true ORDER BY c.createdAt DESC")
+           "cm.userId = :userId AND cm.active = true AND c.active = true ORDER BY COALESCE(c.updatedAt, c.createdAt) DESC")
     List<Conversation> findAllByUserId(String userId);
 
     Optional<Conversation> findByTypeAndActiveTrue(com.ditix.backend.Chat.Models.ConversationType type);
