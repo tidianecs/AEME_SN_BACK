@@ -149,12 +149,20 @@ public class ChatService {
     }
 
     // Persiste un message en base
+    @Transactional
     public MessageDTO saveMessage(Long conversationId, String senderId, String senderFullName, String content) {
         Message message = new Message();
         message.setConversationId(conversationId);
         message.setSenderId(senderId);
         message.setSenderFullName(senderFullName);
         message.setContent(content);
-        return new MessageDTO(messageRepository.save(message));
+        message = messageRepository.save(message);
+
+        conversationRepository.findById(conversationId).ifPresent(conv -> {
+            conv.setUpdatedAt(java.time.LocalDateTime.now());
+            conversationRepository.save(conv);
+        });
+
+        return new MessageDTO(message);
     }
 }

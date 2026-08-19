@@ -57,4 +57,11 @@ public interface ProfilUtilisateurRepository extends JpaRepository<ProfilUtilisa
 
     @org.springframework.data.jpa.repository.Query("SELECT p.keycloakId FROM ProfilUtilisateur p WHERE p.actif = true AND p.role = com.ditix.backend.ProfilUtilisateur.Model.RoleUtilisateur.ADMIN")
     java.util.List<UUID> findActiveAdmins();
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"ministere", "structure", "structure.ministereV2"})
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM ProfilUtilisateur p WHERE p.actif = true AND p.keycloakId != :currentUserId AND (LOWER(p.prenom) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.nom) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.email) LIKE LOWER(CONCAT('%', :query, '%')))")
+    org.springframework.data.domain.Page<ProfilUtilisateur> searchActiveUsersForChat(
+            @org.springframework.data.repository.query.Param("currentUserId") UUID currentUserId,
+            @org.springframework.data.repository.query.Param("query") String query,
+            org.springframework.data.domain.Pageable pageable);
 }

@@ -16,11 +16,47 @@ public class ChatRESTController {
     private final ChatService chatService;
     private final com.ditix.backend.Auth.Services.AuthService authService;
     private final com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService;
+    private final com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository;
 
-    public ChatRESTController(ChatService chatService, com.ditix.backend.Auth.Services.AuthService authService, com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService) {
+    public ChatRESTController(ChatService chatService,
+                              com.ditix.backend.Auth.Services.AuthService authService,
+                              com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService profilUtilisateurCourantService,
+                              com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository) {
         this.chatService = chatService;
         this.authService = authService;
         this.profilUtilisateurCourantService = profilUtilisateurCourantService;
+        this.profilUtilisateurRepository = profilUtilisateurRepository;
+    }
+
+    @GetMapping("/users/search")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'DAGE', 'GESTIONNAIRE')")
+    public ResponseEntity<List<com.ditix.backend.Chat.DTO.ChatUserSearchDTO>> searchUsers(
+            @RequestParam("q") String query,
+            JwtAuthenticationToken authentication
+    ) {
+        if (query == null || query.trim().isEmpty()) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+
+        String queryParam = query.trim();
+        java.util.UUID currentUserId = profilUtilisateurCourantService.obtenirProfilCourant(authentication).getKeycloakId();
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        List<com.ditix.backend.Chat.DTO.ChatUserSearchDTO> results = profilUtilisateurRepository
+                .searchActiveUsersForChat(currentUserId, queryParam, pageable)
+                .stream()
+                .map(p -> new com.ditix.backend.Chat.DTO.ChatUserSearchDTO(
+                        p.getKeycloakId().toString(),
+                        p.getPrenom(),
+                        p.getNom(),
+                        p.getRole() != null ? p.getRole().name() : null,
+                        p.getStructure() != null ? p.getStructure().getName() : null,
+                        (p.getMinistere() != null) ? p.getMinistere().getNom() :
+                        (p.getStructure() != null && p.getStructure().getMinistereV2() != null ? p.getStructure().getMinistereV2().getNom() : null)
+                ))
+                .collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(results);
     }
 
     // Créer ou récupérer une conversation avec un autre user
