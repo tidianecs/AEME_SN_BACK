@@ -78,7 +78,9 @@ public class AuthServiceStatsRegionTest {
                 createStructure("Saint-Louis"),
                 createStructure(null),
                 createStructure("   "),
-                createStructure("THIÈS") // Only in structures
+                createStructure("THIÈS"), // Accented
+                createStructure("Thiès"),
+                createStructure("Kédougou")
         );
         when(structureRepository.findAll()).thenReturn(structures);
 
@@ -89,6 +91,9 @@ public class AuthServiceStatsRegionTest {
                 createUser("SAINT-LOUIS"),
                 createUser(null),
                 createUser(""),
+                createUser("thies"),
+                createUser("THIES"),
+                createUser("KEDOUGOU"),
                 createUser("Ziguinchor") // Only in users
         );
         when(keycloak.realm("test-realm")).thenReturn(realmResource);
@@ -97,7 +102,7 @@ public class AuthServiceStatsRegionTest {
 
         List<Map<String, Object>> stats = authService.getStatsByRegion();
 
-        assertEquals(4, stats.size()); // Dakar, Saint-louis, Thiès, Ziguinchor
+        assertEquals(5, stats.size()); // Dakar, Saint-louis, Thiès/Thies, Kedougou, Ziguinchor
 
         Map<String, Map<String, Object>> statsMap = new HashMap<>();
         for (Map<String, Object> stat : stats) {
@@ -112,9 +117,14 @@ public class AuthServiceStatsRegionTest {
         assertEquals(1L, statsMap.get("Saint-Louis").get("structures"));
         assertEquals(1L, statsMap.get("Saint-Louis").get("gestionnaires"));
 
-        assertTrue(statsMap.containsKey("Thiès"));
-        assertEquals(1L, statsMap.get("Thiès").get("structures"));
-        assertEquals(0L, statsMap.get("Thiès").get("gestionnaires"));
+        // formatRegionName might pick the upper case normalized key which is THIES
+        assertTrue(statsMap.containsKey("Thies"));
+        assertEquals(2L, statsMap.get("Thies").get("structures"));
+        assertEquals(2L, statsMap.get("Thies").get("gestionnaires"));
+
+        assertTrue(statsMap.containsKey("Kedougou"));
+        assertEquals(1L, statsMap.get("Kedougou").get("structures"));
+        assertEquals(1L, statsMap.get("Kedougou").get("gestionnaires"));
 
         assertTrue(statsMap.containsKey("Ziguinchor"));
         assertEquals(0L, statsMap.get("Ziguinchor").get("structures"));
