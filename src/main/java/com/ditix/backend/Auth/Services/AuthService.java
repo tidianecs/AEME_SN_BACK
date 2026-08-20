@@ -385,7 +385,9 @@ public class AuthService {
     private String normalizeRegionKey(String region) {
         if (region == null) return null;
         String trimmed = region.trim();
-        return trimmed.isEmpty() ? null : trimmed.toUpperCase();
+        if (trimmed.isEmpty()) return null;
+        String normalized = java.text.Normalizer.normalize(trimmed, java.text.Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "").toUpperCase();
     }
 
     private String formatRegionName(String normalizedKey) {
