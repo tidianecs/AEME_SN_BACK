@@ -382,21 +382,45 @@ public class AuthService {
             .collect(Collectors.toList());
     }
 
+    private String normalizeRegionKey(String region) {
+        if (region == null) return null;
+        String trimmed = region.trim();
+        return trimmed.isEmpty() ? null : trimmed.toUpperCase();
+    }
+
+    private String formatRegionName(String normalizedKey) {
+        if (normalizedKey == null || normalizedKey.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        boolean capitalizeNext = true;
+        for (char c : normalizedKey.toLowerCase().toCharArray()) {
+            if (Character.isSpaceChar(c) || c == '-') {
+                capitalizeNext = true;
+                sb.append(c);
+            } else if (capitalizeNext) {
+                sb.append(Character.toUpperCase(c));
+                capitalizeNext = false;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     public List<Map<String, Object>> getStatsByRegion() {
         Map<String, Long> structuresByRegion = structureRepository.findAll()
             .stream()
-            .filter(s -> s.getRegion() != null && !s.getRegion().isBlank())
+            .filter(s -> normalizeRegionKey(s.getRegion()) != null)
             .collect(Collectors.groupingBy(
-                Structure::getRegion,
+                s -> normalizeRegionKey(s.getRegion()),
                 Collectors.counting()
             ));
 
         List<UserRepresentation> allUsers = keycloak.realm(realm).users().list(0, 500);
 
         Map<String, Long> usersByRegion = allUsers.stream()
-            .filter(u -> !getAttr(u, "region").isBlank())
+            .filter(u -> normalizeRegionKey(getAttr(u, "region")) != null)
             .collect(Collectors.groupingBy(
-                u -> getAttr(u, "region"),
+                u -> normalizeRegionKey(getAttr(u, "region")),
                 Collectors.counting()
             ));
 
@@ -406,11 +430,11 @@ public class AuthService {
 
         return allRegions.stream()
             .sorted()
-            .map(region -> {
+            .map(regionKey -> {
                 Map<String, Object> stat = new HashMap<>();
-                stat.put("region",        region);
-                stat.put("gestionnaires", usersByRegion.getOrDefault(region, 0L));
-                stat.put("structures",    structuresByRegion.getOrDefault(region, 0L));
+                stat.put("region",        formatRegionName(regionKey));
+                stat.put("gestionnaires", usersByRegion.getOrDefault(regionKey, 0L));
+                stat.put("structures",    structuresByRegion.getOrDefault(regionKey, 0L));
                 return stat;
             })
             .collect(Collectors.toList());
