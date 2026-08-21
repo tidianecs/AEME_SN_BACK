@@ -134,97 +134,78 @@ public class InvitationResendIntegrationTest {
 
 
     @Test
-
     void testResendInvitation_BothActions() {
-
         UserRepresentation userRep = new UserRepresentation();
-
-        userRep.setRequiredActions(Arrays.asList("VERIFY_EMAIL", "UPDATE_PASSWORD"));
-
+        userRep.setEmailVerified(false);
         when(userResource.toRepresentation()).thenReturn(userRep);
-
-
+        when(userResource.credentials()).thenReturn(new java.util.ArrayList<>());
 
         gestionCompteKeycloakService.resendInvitation(testKeycloakId);
 
-
-
         verify(userResource).executeActionsEmail(
-
                 eq("frontend-aeme"),
-
                 eq("https://aeme-energymanager-front.vercel.app/login"),
-
                 eq(1209600),
-
                 eq(Arrays.asList("VERIFY_EMAIL", "UPDATE_PASSWORD"))
-
         );
-
     }
 
-
-
     @Test
-
-    void testResendInvitation_OneAction() {
-
+    void testResendInvitation_UpdatePasswordOnly() {
         UserRepresentation userRep = new UserRepresentation();
-
-        userRep.setRequiredActions(Arrays.asList("VERIFY_EMAIL"));
-
+        userRep.setEmailVerified(true);
         when(userResource.toRepresentation()).thenReturn(userRep);
-
-
+        when(userResource.credentials()).thenReturn(new java.util.ArrayList<>());
 
         gestionCompteKeycloakService.resendInvitation(testKeycloakId);
 
-
-
         verify(userResource).executeActionsEmail(
-
                 eq("frontend-aeme"),
-
                 eq("https://aeme-energymanager-front.vercel.app/login"),
-
                 eq(1209600),
-
-                eq(Arrays.asList("VERIFY_EMAIL"))
-
+                eq(Arrays.asList("UPDATE_PASSWORD"))
         );
-
     }
 
-
-
     @Test
-
-    void testResendInvitation_AlreadyActivated() {
-
+    void testResendInvitation_VerifyEmailOnly() {
         UserRepresentation userRep = new UserRepresentation();
-
-        userRep.setRequiredActions(new ArrayList<>());
-
+        userRep.setEmailVerified(false);
         when(userResource.toRepresentation()).thenReturn(userRep);
 
+        org.keycloak.representations.idm.CredentialRepresentation pwd = new org.keycloak.representations.idm.CredentialRepresentation();
+        pwd.setType(org.keycloak.representations.idm.CredentialRepresentation.PASSWORD);
+        when(userResource.credentials()).thenReturn(java.util.Collections.singletonList(pwd));
 
+        gestionCompteKeycloakService.resendInvitation(testKeycloakId);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        verify(userResource).executeActionsEmail(
+                eq("frontend-aeme"),
+                eq("https://aeme-energymanager-front.vercel.app/login"),
+                eq(1209600),
+                eq(Arrays.asList("VERIFY_EMAIL"))
+        );
+    }
 
-            gestionCompteKeycloakService.resendInvitation(testKeycloakId);
+    @Test
+    void testResendInvitation_AlreadyActivated() {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEmailVerified(true);
+        when(userResource.toRepresentation()).thenReturn(userRep);
 
-        });
+        org.keycloak.representations.idm.CredentialRepresentation pwd = new org.keycloak.representations.idm.CredentialRepresentation();
+        pwd.setType(org.keycloak.representations.idm.CredentialRepresentation.PASSWORD);
+        when(userResource.credentials()).thenReturn(java.util.Collections.singletonList(pwd));
 
-
+        org.springframework.web.server.ResponseStatusException exception = assertThrows(
+            org.springframework.web.server.ResponseStatusException.class,
+            () -> gestionCompteKeycloakService.resendInvitation(testKeycloakId)
+        );
 
         assertEquals(409, exception.getStatusCode().value());
-
         assertTrue(exception.getReason().contains("L'activation du compte est déjà terminée"));
 
-
-
         verify(userResource, never()).executeActionsEmail(any(), any(), anyInt(), any());
-
     }
 
 
