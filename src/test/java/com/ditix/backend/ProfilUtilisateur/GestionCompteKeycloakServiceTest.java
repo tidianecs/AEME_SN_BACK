@@ -14,6 +14,9 @@ import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -48,13 +51,13 @@ class GestionCompteKeycloakServiceTest {
 
     @Mock
     private RolesResource rolesResource;
-    
+
     @Mock
     private RoleResource roleResource;
-    
+
     @Mock
     private RoleMappingResource roleMappingResource;
-    
+
     @Mock
     private RoleScopeResource roleScopeResource;
 
@@ -73,7 +76,7 @@ class GestionCompteKeycloakServiceTest {
     void testCreerIdentite() throws Exception {
         when(keycloak.realm("aeme")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
-        
+
         Response realResponse = Response.status(201).location(new URI("http://localhost/auth/admin/realms/aeme/users/123e4567-e89b-12d3-a456-426614174000")).build();
         when(usersResource.create(any(UserRepresentation.class))).thenReturn(realResponse);
 
@@ -101,7 +104,7 @@ class GestionCompteKeycloakServiceTest {
         assertEquals("Nom", capturedUser.getLastName());
         assertTrue(capturedUser.isEnabled());
         assertFalse(capturedUser.isEmailVerified());
-        
+
         verify(roleScopeResource).add(anyList());
     }
 
@@ -120,5 +123,97 @@ class GestionCompteKeycloakServiceTest {
             eq(1209600),
             eq(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"))
         );
+    }
+
+    @Test
+    void testIsInvitationPending_emailNotVerified_noPassword_shouldReturnTrue() {
+        when(keycloak.realm("aeme")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(anyString())).thenReturn(userResource);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setEmailVerified(false);
+        when(userResource.toRepresentation()).thenReturn(user);
+        when(userResource.credentials()).thenReturn(Collections.emptyList());
+
+        assertTrue(service.isInvitationPending(UUID.randomUUID()));
+    }
+
+    @Test
+    void testIsInvitationPending_emailVerified_noPassword_shouldReturnTrue() {
+        when(keycloak.realm("aeme")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(anyString())).thenReturn(userResource);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setEmailVerified(true);
+        when(userResource.toRepresentation()).thenReturn(user);
+        when(userResource.credentials()).thenReturn(Collections.emptyList());
+
+        assertTrue(service.isInvitationPending(UUID.randomUUID()));
+    }
+
+    @Test
+    void testIsInvitationPending_emailNotVerified_passwordExists_shouldReturnTrue() {
+        when(keycloak.realm("aeme")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(anyString())).thenReturn(userResource);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setEmailVerified(false);
+        when(userResource.toRepresentation()).thenReturn(user);
+
+        CredentialRepresentation pwd = new CredentialRepresentation();
+        pwd.setType(CredentialRepresentation.PASSWORD);
+        when(userResource.credentials()).thenReturn(List.of(pwd));
+
+        assertTrue(service.isInvitationPending(UUID.randomUUID()));
+    }
+
+    @Test
+    void testIsInvitationPending_emailVerified_passwordExists_shouldReturnFalse() {
+        when(keycloak.realm("aeme")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(anyString())).thenReturn(userResource);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setEmailVerified(true);
+        when(userResource.toRepresentation()).thenReturn(user);
+
+        CredentialRepresentation pwd = new CredentialRepresentation();
+        pwd.setType(CredentialRepresentation.PASSWORD);
+        when(userResource.credentials()).thenReturn(List.of(pwd));
+
+        assertFalse(service.isInvitationPending(UUID.randomUUID()));
+    }
+
+    @Test
+    void testIsInvitationPending_otherCredentialsExist_noPassword_shouldReturnTrue() {
+        when(keycloak.realm("aeme")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(anyString())).thenReturn(userResource);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setEmailVerified(true);
+        when(userResource.toRepresentation()).thenReturn(user);
+
+        CredentialRepresentation otp = new CredentialRepresentation();
+        otp.setType("otp");
+        when(userResource.credentials()).thenReturn(List.of(otp));
+
+        assertTrue(service.isInvitationPending(UUID.randomUUID()));
+    }
+
+    @Test
+    void testIsInvitationPending_notFound_shouldThrowException() {
+        when(keycloak.realm("aeme")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.get(anyString())).thenThrow(new jakarta.ws.rs.NotFoundException());
+
+        ResponseStatusException exception = assertThrows(
+            ResponseStatusException.class,
+            () -> service.isInvitationPending(UUID.randomUUID())
+        );
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     }
 }
