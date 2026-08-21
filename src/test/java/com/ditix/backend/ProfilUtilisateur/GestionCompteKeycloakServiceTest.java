@@ -117,7 +117,7 @@ class GestionCompteKeycloakServiceTest {
         verify(userResource).executeActionsEmail(
             eq("frontend-aeme"),
             eq("https://aeme-energymanager-front.vercel.app/login"),
-            eq(86400),
+            eq(1209600),
             eq(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"))
         );
     }
