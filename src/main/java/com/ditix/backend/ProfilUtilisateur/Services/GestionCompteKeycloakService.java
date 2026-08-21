@@ -1,6 +1,8 @@
 package com.ditix.backend.ProfilUtilisateur.Services;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,12 +58,14 @@ public class GestionCompteKeycloakService {
     }
     public boolean isInvitationPending(UUID keycloakId) {
         try {
-            UserRepresentation user = keycloak.realm(realm).users().get(keycloakId.toString()).toRepresentation();
-            List<String> actions = user.getRequiredActions();
-            if (actions == null) {
-                return false;
-            }
-            return actions.contains("VERIFY_EMAIL") || actions.contains("UPDATE_PASSWORD");
+            UserResource userResource = keycloak.realm(realm).users().get(keycloakId.toString());
+            UserRepresentation user = userResource.toRepresentation();
+
+            boolean emailNotVerified = user.isEmailVerified() == null || !user.isEmailVerified();
+            boolean noPasswordSet = userResource.credentials().stream()
+                    .noneMatch(c -> CredentialRepresentation.PASSWORD.equals(c.getType()));
+
+            return emailNotVerified || noPasswordSet;
         } catch (jakarta.ws.rs.NotFoundException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "L'identité Keycloak de cet utilisateur est introuvable.");
         }
