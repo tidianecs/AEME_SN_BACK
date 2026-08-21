@@ -109,55 +109,26 @@ public class InvitationResendIntegrationTest {
 
 
     @Test
-
     void testIsInvitationPending_BothActions() {
-
         UserRepresentation userRep = new UserRepresentation();
-
-        userRep.setRequiredActions(Arrays.asList("VERIFY_EMAIL", "UPDATE_PASSWORD"));
-
+        userRep.setEmailVerified(false);
         when(userResource.toRepresentation()).thenReturn(userRep);
-
-
+        when(userResource.credentials()).thenReturn(new java.util.ArrayList<>());
 
         assertTrue(gestionCompteKeycloakService.isInvitationPending(testKeycloakId));
-
     }
 
-
-
     @Test
-
-    void testIsInvitationPending_OneAction() {
-
-        UserRepresentation userRep = new UserRepresentation();
-
-        userRep.setRequiredActions(Arrays.asList("UPDATE_PASSWORD"));
-
-        when(userResource.toRepresentation()).thenReturn(userRep);
-
-
-
-        assertTrue(gestionCompteKeycloakService.isInvitationPending(testKeycloakId));
-
-    }
-
-
-
-    @Test
-
     void testIsInvitationPending_NoAction() {
-
         UserRepresentation userRep = new UserRepresentation();
-
-        userRep.setRequiredActions(new ArrayList<>());
-
+        userRep.setEmailVerified(true);
         when(userResource.toRepresentation()).thenReturn(userRep);
 
-
+        org.keycloak.representations.idm.CredentialRepresentation pwd = new org.keycloak.representations.idm.CredentialRepresentation();
+        pwd.setType(org.keycloak.representations.idm.CredentialRepresentation.PASSWORD);
+        when(userResource.credentials()).thenReturn(java.util.Collections.singletonList(pwd));
 
         assertFalse(gestionCompteKeycloakService.isInvitationPending(testKeycloakId));
-
     }
 
 
