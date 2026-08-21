@@ -1,6 +1,7 @@
 package com.ditix.backend.ProfilUtilisateur.Controllers;
 
 import com.ditix.backend.ProfilUtilisateur.DTO.ProfilUtilisateurDTO;
+import com.ditix.backend.ProfilUtilisateur.DTO.AdminUtilisateurDetailDTO;
 import com.ditix.backend.ProfilUtilisateur.Model.ProfilUtilisateur;
 import com.ditix.backend.ProfilUtilisateur.Services.AutorisationMetierService;
 import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
@@ -69,7 +70,7 @@ public class ProfilUtilisateurController {
     }
 
     @GetMapping("/admin/utilisateurs/{id}")
-    public ProfilUtilisateurDTO getAdminUser(
+    public AdminUtilisateurDetailDTO getAdminUser(
             @PathVariable Long id,
             JwtAuthenticationToken authentication) {
 
@@ -78,7 +79,7 @@ public class ProfilUtilisateurController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé");
         }
 
-        return profilUtilisateurLectureService.obtenirParId(id);
+        return profilUtilisateurLectureService.obtenirDetailAdminParId(id);
     }
 
     @GetMapping("/dage/gestionnaires")

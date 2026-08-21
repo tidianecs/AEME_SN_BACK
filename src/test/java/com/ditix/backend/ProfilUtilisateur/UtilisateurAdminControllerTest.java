@@ -12,6 +12,7 @@ import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantServ
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.ditix.backend.ProfilUtilisateur.Services.GestionCompteKeycloakService;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -39,6 +40,9 @@ public class UtilisateurAdminControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockBean
+    private GestionCompteKeycloakService gestionCompteKeycloakService;
 
     @MockBean
     private CreationUtilisateurOrchestrator creationUtilisateurOrchestrator;

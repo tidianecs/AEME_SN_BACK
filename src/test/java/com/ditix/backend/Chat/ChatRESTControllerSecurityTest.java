@@ -101,6 +101,9 @@ public class ChatRESTControllerSecurityTest {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private com.ditix.backend.ProfilUtilisateur.Repository.ProfilUtilisateurRepository profilUtilisateurRepository;
+
     @Test
     void getCounterpart_withoutAuthentication_shouldReturn401() throws Exception {
         mockMvc.perform(get("/api/v1/chat/conversations/1/counterpart"))

@@ -9,6 +9,7 @@ import com.ditix.backend.ProfilUtilisateur.Services.CreationUtilisateurOrchestra
 import com.ditix.backend.ProfilUtilisateur.Services.ProfilUtilisateurCourantService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import com.ditix.backend.ProfilUtilisateur.Services.GestionCompteKeycloakService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,6 +38,9 @@ class UtilisateurAdminActivationSecurityTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockBean
+    private GestionCompteKeycloakService gestionCompteKeycloakService;
 
     @MockBean
     private CreationUtilisateurOrchestrator creationUtilisateurOrchestrator;
