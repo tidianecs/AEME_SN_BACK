@@ -71,20 +71,28 @@ public class GestionCompteKeycloakService {
         }
     }
     public void resendInvitation(UUID keycloakId) {
+        if (!isInvitationPending(keycloakId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "L'activation du compte est déjà terminée pour cet utilisateur.");
+        }
+
         try {
-            UserRepresentation user = keycloak.realm(realm).users().get(keycloakId.toString()).toRepresentation();
-            List<String> actions = user.getRequiredActions();
-            if (actions == null || (!actions.contains("VERIFY_EMAIL") && !actions.contains("UPDATE_PASSWORD"))) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "L'activation du compte est déjà terminée pour cet utilisateur.");
-            }
+            UserResource userResource = keycloak.realm(realm).users().get(keycloakId.toString());
+            UserRepresentation user = userResource.toRepresentation();
+
             List<String> actionsToSend = new ArrayList<>();
-            if (actions.contains("VERIFY_EMAIL")) {
+
+            boolean emailNotVerified = user.isEmailVerified() == null || !user.isEmailVerified();
+            if (emailNotVerified) {
                 actionsToSend.add("VERIFY_EMAIL");
             }
-            if (actions.contains("UPDATE_PASSWORD")) {
+
+            boolean noPasswordSet = userResource.credentials().stream()
+                    .noneMatch(c -> CredentialRepresentation.PASSWORD.equals(c.getType()));
+            if (noPasswordSet) {
                 actionsToSend.add("UPDATE_PASSWORD");
             }
-            keycloak.realm(realm).users().get(keycloakId.toString()).executeActionsEmail(
+
+            userResource.executeActionsEmail(
                 "frontend-aeme",
                 "https://aeme-energymanager-front.vercel.app/login",
                 INVITATION_LIFESPAN_SECONDS,
