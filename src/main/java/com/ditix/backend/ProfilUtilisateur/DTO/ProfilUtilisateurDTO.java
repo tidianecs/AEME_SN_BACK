@@ -38,6 +38,8 @@ public class ProfilUtilisateurDTO {
     private ZonedDateTime creeLe;
     private ZonedDateTime modifieLe;
 
+    private Integer score;
+
     public ProfilUtilisateurDTO(ProfilUtilisateur profil) {
         if (profil == null) return;
 
@@ -150,4 +152,7 @@ public class ProfilUtilisateurDTO {
 
     public ZonedDateTime getModifieLe() { return modifieLe; }
     public void setModifieLe(ZonedDateTime modifieLe) { this.modifieLe = modifieLe; }
+
+    public Integer getScore() { return score; }
+    public void setScore(Integer score) { this.score = score; }
 }
