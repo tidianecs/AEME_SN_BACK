@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.UUID;
 
 import com.ditix.backend.Auth.Services.AuthService;
+import com.ditix.backend.Report.Services.ReportService;
 import com.ditix.backend.ProfilUtilisateur.DTO.ModifierMonProfilRequest;
 import com.ditix.backend.ProfilUtilisateur.DTO.ProfilUtilisateurDTO;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +22,12 @@ public class ProfilUtilisateurCourantService {
 
     private final ProfilUtilisateurRepository profilUtilisateurRepository;
     private final AuthService authService;
+    private final ReportService reportService;
 
-    public ProfilUtilisateurCourantService(ProfilUtilisateurRepository profilUtilisateurRepository, AuthService authService) {
+    public ProfilUtilisateurCourantService(ProfilUtilisateurRepository profilUtilisateurRepository, AuthService authService, ReportService reportService) {
         this.profilUtilisateurRepository = profilUtilisateurRepository;
         this.authService = authService;
+        this.reportService = reportService;
     }
 
     public ProfilUtilisateur obtenirProfilCourant(JwtAuthenticationToken authentication) {
@@ -52,7 +55,11 @@ public class ProfilUtilisateurCourantService {
 
     @Transactional(readOnly = true)
     public ProfilUtilisateurDTO obtenirProfilCourantDTO(JwtAuthenticationToken authentication) {
-        return new ProfilUtilisateurDTO(obtenirProfilCourant(authentication));
+        ProfilUtilisateur profil = obtenirProfilCourant(authentication);
+        ProfilUtilisateurDTO dto = new ProfilUtilisateurDTO(profil);
+        String userId = authentication.getToken().getSubject();
+        dto.setScore(reportService.calculateScore(userId));
+        return dto;
     }
 
     @Transactional
@@ -98,6 +105,9 @@ public class ProfilUtilisateurCourantService {
             }
         }
 
-        return new ProfilUtilisateurDTO(profil);
+        ProfilUtilisateurDTO dto = new ProfilUtilisateurDTO(profil);
+        String userId = authentication.getToken().getSubject();
+        dto.setScore(reportService.calculateScore(userId));
+        return dto;
     }
 }
